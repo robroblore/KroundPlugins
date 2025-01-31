@@ -9,42 +9,45 @@ description: Many emots that enhance the player's experience
 commands:
   kiss:
     description: Saruta un alt jucator
-    usage: /kiss playerName
-    permission: emotesplus.canSex
 
   sarut:
     description: Saruta un alt jucator
-    usage: /sarut playerName
-    permission: emotesplus.canSex
 
   hug:
     description: Imbratiseaza un alt jucator
-    usage: /hug playerName
-    permission: emotesplus.canSex
 
   imbratisare:
     description: Imbratiseaza un alt jucator
-    usage: /imbratisare playerName
-    permission: emotesplus.canSex
-
-  fart:
-    description: Fa pârț
-    usage: /fart
-    permission: emotesplus.canSex
 
   part:
     description: Fa pârț
-    usage: /part
-    permission: emotesplus.canSex
 
   besina:
     description: Fa pârț
-    usage: /besina
-    permission: emotesplus.canSex
+
+  fart:
+    description: Fa pârț
+
+
+  superfart:
+    description: Fa superpârț
+
+  superpart:
+    description: Fa superpârț
+
+  superbesina:
+    description: Fa superpârț
 
   slap:
     description: Da o palma unui jucator
-    usage: /slap playerName
+
+  superslap:
+    description: Da o palma tare unui jucator
+    permission: emotesplus.canSex
+
+  emotesPlus:
+    description: Reincarca configul cu /emotesPlus reload
+    usage: /<command> reload
     permission: emotesplus.canSex
 
 permissions:

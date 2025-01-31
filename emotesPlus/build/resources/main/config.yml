@@ -1,2 +1,25 @@
 messages:
-  specifyPlayer: "&4Trebuie sa specifici ce jucator doresti sa {action}."
+  prefix: "&l&dLoreWare ▶ &r"
+  errors:
+    specifyPlayer: "&4Trebuie sa specifici ce jucator doresti sa {action}."
+    playerNotFound: "&4Jucatorul {player} nu a fost gasit."
+    playerTooFar: "&4Jucatorul {player} este prea departe."
+  actions:
+    caster: "&2L-ai {action} pe {target}!"
+    target: "&2{player} te-a {action}!"
+    part: "&2Ai facut pârț! Ew!"
+    superpart: "&2Ai facut superpârț! DUBLU EW!"
+
+actions:
+  kiss:
+    1: "saruti"
+    2: "sarutat"
+  hug:
+    1: "imbratisezi"
+    2: "imbratisat"
+  slap:
+    1: "palmuiesti"
+    2: "palmuit"
+  superslap:
+    1: "superpalmuiesti"
+    2: "superpalmuit"
