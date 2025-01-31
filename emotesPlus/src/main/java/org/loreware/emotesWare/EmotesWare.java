@@ -1,4 +1,4 @@
-package org.loreware.emotesPlus;
+package org.loreware.emotesWare;
 
 import net.kyori.adventure.text.Component;
 import org.bukkit.Particle;
@@ -14,14 +14,14 @@ import org.bukkit.util.Vector;
 import java.util.ArrayList;
 import java.util.List;
 
-public final class EmotesPlus extends JavaPlugin implements Listener, CommandExecutor {
+public final class EmotesWare extends JavaPlugin implements Listener, CommandExecutor {
 
     FileConfiguration config;
 
     @Override
     public void onEnable() {
         // Plugin startup logic
-        System.out.println("EmotesPlus plugin enabled");
+        System.out.println("EmotesWare plugin enabled");
 
         saveResource("config.yml", /* replace */ true);
 
@@ -76,7 +76,7 @@ public final class EmotesPlus extends JavaPlugin implements Listener, CommandExe
         if (sender instanceof Player) {
             Player player = (Player) sender;
 
-            if(cmd.getName().equalsIgnoreCase("emotesPlus")){
+            if(cmd.getName().equalsIgnoreCase("emotesware")){
                 if (args.length == 1 && (args[0].equalsIgnoreCase("reload") || args[0].equalsIgnoreCase("rl"))) {
                     reloadConfig();
                     config = getConfig();
@@ -142,7 +142,7 @@ public final class EmotesPlus extends JavaPlugin implements Listener, CommandExe
     }
 
     public List<String> onTabComplete(CommandSender sender, Command cmd, String label, String[] args){
-        if(cmd.getName().equalsIgnoreCase("emotesPlus")){
+        if(cmd.getName().equalsIgnoreCase("emotesware")){
             if(sender instanceof Player){
                 Player player = (Player) sender;
 

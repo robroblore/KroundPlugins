@@ -1,6 +1,6 @@
-name: emotesPlus
-version: '1.0'
-main: org.loreware.emotesPlus.EmotesPlus
+name: emotesWare
+version: '1.1'
+main: org.loreware.emotesWare.EmotesWare
 api-version: '1.21'
 prefix: LoreWare
 load: STARTUP
@@ -43,14 +43,14 @@ commands:
 
   superslap:
     description: Da o palma tare unui jucator
-    permission: emotesplus.canSex
+    permission: emotesware.canSex
 
-  emotesPlus:
-    description: Reincarca configul cu /emotesPlus reload
+  emotesware:
+    description: Reincarca configul cu /emotesware reload
     usage: /<command> reload
-    permission: emotesplus.canSex
+    permission: emotesware.canSex
 
 permissions:
-  emotesplus.canSex:
+  emotesware.canSex:
     description: Basically same as op
     default: op

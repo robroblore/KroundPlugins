@@ -5,6 +5,10 @@ plugins {
 group = 'org.loreware'
 version = '1.0'
 
+jar {
+    archiveBaseName.set("EmotesWare") // Change this to your desired name
+}
+
 repositories {
     mavenCentral()
     maven {
