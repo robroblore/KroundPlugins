@@ -1,2 +1,5 @@
 messages:
   specifyPlayer: "&4Trebuie sa specifici ce jucator doresti sa {action}."
+
+actions:
+  kiss: "saruti"

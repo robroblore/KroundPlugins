@@ -39,7 +39,8 @@ public final class EmotesPlus extends JavaPlugin implements Listener, CommandExe
 
             if(cmd.getName().equalsIgnoreCase("kiss") || cmd.getName().equalsIgnoreCase("sarut")) {
                 if (args.length == 0) {
-                    player.sendMessage(getConf("messages.kissSpecifyPlayer").replace("{action}", "saruti"));
+                    player.sendMessage(getConf("messages.kissSpecifyPlayer").replace("{action}",
+                            getConf("actions.kiss")));
                     return true;
                 }
                 String pName = args[0];
