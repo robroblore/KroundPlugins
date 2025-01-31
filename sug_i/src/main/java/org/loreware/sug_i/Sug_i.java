@@ -3,6 +3,7 @@ package org.loreware.sug_i;
 import io.papermc.paper.event.player.AsyncChatEvent;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextReplacementConfig;
+import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -38,9 +39,12 @@ public final class Sug_i extends JavaPlugin implements Listener {
     @EventHandler
     public void onAsyncPlayerChatEvent(AsyncChatEvent event) {
         Component message = event.message().replaceText(TextReplacementConfig.builder()
-                .match(Pattern.compile("sugi|sug1|5ug1|5ugi", Pattern.CASE_INSENSITIVE))
-                .replacement("sug") // Maintain consistent case in replacement
-                .build());
+                .match(Pattern.compile("[5s]ug[iy1YI!]*", Pattern.CASE_INSENSITIVE))
+                .replacement((matchResult, builder) -> {
+                    String matchedText = matchResult.group(); // Get the full match (including unwanted characters)
+                    String cleanedText = matchedText.replaceAll("[iy1IY!]+$", ""); // Remove all trailing 'i', 'y', or '1'
+                    return Component.text(cleanedText);
+                }).build());
         event.message(message);
     }
 }

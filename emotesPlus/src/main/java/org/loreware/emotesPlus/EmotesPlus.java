@@ -1,10 +1,12 @@
 package org.loreware.emotesPlus;
 
+import net.kyori.adventure.text.Component;
 import org.bukkit.ChatColor;
 import org.bukkit.Particle;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Listener;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -12,11 +14,22 @@ import org.bukkit.util.Vector;
 
 public final class EmotesPlus extends JavaPlugin implements Listener, CommandExecutor {
 
+    FileConfiguration config;
+
     @Override
     public void onEnable() {
         // Plugin startup logic
         System.out.println("EmotesPlus plugin enabled");
+
+        saveResource("config.yml", /* replace */ true);
+
+        config = getConfig();
+
         getServer().getPluginManager().registerEvents(this, this);
+    }
+
+    public String getConf(String path){
+        return Component.text(config.getString(path, "&4&l[config entry not found]").replaceAll("&", "§")).content();
     }
 
     @Override
@@ -26,7 +39,7 @@ public final class EmotesPlus extends JavaPlugin implements Listener, CommandExe
 
             if(cmd.getName().equalsIgnoreCase("kiss") || cmd.getName().equalsIgnoreCase("sarut")) {
                 if (args.length == 0) {
-                    player.sendMessage(ChatColor.RED + "Trebuie sa specifici ce jucator doresti sa saruti.");
+                    player.sendMessage(ChatColor.translateAlternateColorCodes('&', "&mTrebuie sa specifici ce jucator doresti sa saruti."));
                     return true;
                 }
                 String pName = args[0];
