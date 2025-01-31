@@ -1,0 +1,8 @@
+name: sug_i
+version: '1.0'
+main: org.loreware.sug_i.Sug_i
+api-version: '1.21'
+prefix: LoreWare
+load: STARTUP
+authors: [ robroblore ]
+description: Replaces the word sugi with sug
