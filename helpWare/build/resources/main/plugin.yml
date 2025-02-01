@@ -1,0 +1,23 @@
+name: helpWare
+version: '1.0'
+main: org.loreware.helpWare.HelpWare
+api-version: '1.21'
+prefix: LoreWare
+load: STARTUP
+authors: [ robroblore ]
+description: Customizable help command
+
+commands:
+    help:
+        description: Shows the help menu
+        usage: /<command> [page]
+
+    helpware:
+        description: Reload the config with /helpware reload
+        usage: /<command> reload
+        permission: helpware.canReload
+
+permissions:
+  helpware.canReload:
+    description: Can reload the config
+    default: op
