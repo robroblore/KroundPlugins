@@ -12,11 +12,17 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.util.Vector;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.UUID;
 
 public final class EmotesWare extends JavaPlugin implements Listener, CommandExecutor {
 
     FileConfiguration config;
+
+    final HashMap<UUID, Long> cooldowns = new HashMap<>();
+
+    int cooldownTime = 5;
 
     @Override
     public void onEnable() {
@@ -26,6 +32,8 @@ public final class EmotesWare extends JavaPlugin implements Listener, CommandExe
         saveResource("config.yml", /* replace */ true);
 
         config = getConfig();
+
+        cooldownTime = config.getInt("vars.defaultCooldown", 5);
 
         getServer().getPluginManager().registerEvents(this, this);
     }
@@ -38,6 +46,25 @@ public final class EmotesWare extends JavaPlugin implements Listener, CommandExe
 
 
     public Player basicEmoteHandler(Player player, String[] args, String emoteName){
+
+        // Cooldown management
+
+        if (!player.hasPermission("emotesware.bypassCooldown")){
+            if (!cooldowns.containsKey(player.getUniqueId())){
+                cooldowns.put(player.getUniqueId(), System.currentTimeMillis());
+            } else{
+                long timeElapsed = System.currentTimeMillis() - cooldowns.get(player.getUniqueId());
+
+                if (timeElapsed < cooldownTime * 1000L){
+                    player.sendMessage(getConf("messages.prefix") + getConf("messages.errors.cooldown")
+                            .replace("{time}", String.format("%.2f", (float) cooldownTime - timeElapsed / 1000)));
+                    return null;
+                } else{
+                    cooldowns.put(player.getUniqueId(), System.currentTimeMillis());
+                }
+            }
+        }
+
         if (args.length == 0) {
             player.sendMessage(getConf("messages.prefix") + getConf("messages.errors.specifyPlayer")
                     .replace("{action}", getConf(String.format("actions.%s.1", emoteName))));
@@ -80,6 +107,7 @@ public final class EmotesWare extends JavaPlugin implements Listener, CommandExe
                 if (args.length == 1 && (args[0].equalsIgnoreCase("reload") || args[0].equalsIgnoreCase("rl"))) {
                     reloadConfig();
                     config = getConfig();
+                    cooldownTime = config.getInt("vars.defaultCooldown", 5);
                     player.sendMessage(getConf("messages.prefix") + "§2Config reloaded.");
                     return true;
                 }
@@ -138,7 +166,7 @@ public final class EmotesWare extends JavaPlugin implements Listener, CommandExe
 
         }
 
-        return false;
+        return true;
     }
 
     public List<String> onTabComplete(CommandSender sender, Command cmd, String label, String[] args){

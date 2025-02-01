@@ -13,11 +13,15 @@ messages:
     specifyPlayer: "&4Trebuie sa specifici ce jucator doresti sa {action}." # uses actions.action.1
     playerNotFound: "&4Jucatorul {player} nu a fost gasit."
     playerTooFar: "&4Jucatorul {player} este prea departe."
+    cooldown: "&4Mai asteapta {time} secunde pana mai poti folosi un emote."
   actions:
     caster: "&2L-ai {action} pe {target}!" # uses actions.action.2
     target: "&2{player} te-a {action}!" # uses actions.action.2
     part: "&2Ai facut pârț! Ew!"
     superpart: "&2Ai facut superpârț! DUBLU EW!"
+
+vars:
+  defaultCooldown: 5 # In seconds
 
 actions:
   kiss:

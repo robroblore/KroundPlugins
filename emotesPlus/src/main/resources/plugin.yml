@@ -5,7 +5,7 @@ api-version: '1.21'
 prefix: LoreWare
 load: STARTUP
 authors: [ robroblore ]
-description: Many emots that enhance the player's experience
+description: Many emotes that enhance the player's experience
 commands:
   kiss:
     description: Saruta un alt jucator
@@ -28,7 +28,6 @@ commands:
   fart:
     description: Fa pârț
 
-
   superfart:
     description: Fa superpârț
 
@@ -43,14 +42,20 @@ commands:
 
   superslap:
     description: Da o palma tare unui jucator
-    permission: emotesware.canSex
+    permission: emotesware.canSuperslap
 
   emotesware:
     description: Reincarca configul cu /emotesware reload
     usage: /<command> reload
-    permission: emotesware.canSex
+    permission: emotesware.canReload
 
 permissions:
-  emotesware.canSex:
-    description: Basically same as op
+  emotesware.canReload:
+    description: Can reload the config
+    default: op
+  emotesware.canSuperslap:
+    description: Can use the command superslap
+    default: op
+  emotesware.bypassCooldown:
+    description: Bypass the cooldown
     default: op
