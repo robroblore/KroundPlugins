@@ -19,6 +19,7 @@ messages:
     target: "&2{player} te-a {action}!" # uses actions.action.2
     part: "&2Ai facut pârț! Ew!"
     superpart: "&2Ai facut superpârț! DUBLU EW!"
+    selfHug: "&2Nu te mai imbratisa singur tristule! :<"
 
 vars:
   defaultCooldown: 5 # In seconds

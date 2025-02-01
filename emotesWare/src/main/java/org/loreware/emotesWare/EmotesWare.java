@@ -29,9 +29,11 @@ public final class EmotesWare extends JavaPlugin implements Listener, CommandExe
         // Plugin startup logic
         System.out.println("EmotesWare plugin enabled");
 
-        saveResource("config.yml", /* replace */ true);
+        saveDefaultConfig();
 
         config = getConfig();
+        config.options().copyDefaults(true);
+        saveConfig();
 
         cooldownTime = config.getInt("vars.defaultCooldown", 5);
 
@@ -43,12 +45,7 @@ public final class EmotesWare extends JavaPlugin implements Listener, CommandExe
         return Component.text(config.getString(path, String.format("&4&l[entry %s not found]", path)).replaceAll("&", "§")).content();
     }
 
-
-
-    public Player basicEmoteHandler(Player player, String[] args, String emoteName){
-
-        // Cooldown management
-
+    public boolean checkForCooldown(Player player){
         if (!player.hasPermission("emotesware.bypassCooldown")){
             if (!cooldowns.containsKey(player.getUniqueId())){
                 cooldowns.put(player.getUniqueId(), System.currentTimeMillis());
@@ -57,13 +54,22 @@ public final class EmotesWare extends JavaPlugin implements Listener, CommandExe
 
                 if (timeElapsed < cooldownTime * 1000L){
                     player.sendMessage(getConf("messages.prefix") + getConf("messages.errors.cooldown")
-                            .replace("{time}", String.format("%.2f", (float) cooldownTime - timeElapsed / 1000)));
-                    return null;
+                            .replace("{time}", String.format("%.2f", (cooldownTime * 1000L - timeElapsed) / 1000f)));
+                    return false;
                 } else{
                     cooldowns.put(player.getUniqueId(), System.currentTimeMillis());
                 }
             }
         }
+
+        return true;
+    }
+
+    public Player basicEmoteHandler(Player player, String[] args, String emoteName){
+
+        // Cooldown management
+
+        if(!checkForCooldown(player)) return null;
 
         if (args.length == 0) {
             player.sendMessage(getConf("messages.prefix") + getConf("messages.errors.specifyPlayer")
@@ -128,17 +134,26 @@ public final class EmotesWare extends JavaPlugin implements Listener, CommandExe
 
                 if (target == null) return true;
 
+                if (target == player){
+                    player.sendMessage(getConf("messages.prefix") + getConf("messages.actions.selfHug"));
+                }
+
                 player.getWorld().spawnParticle(Particle.HAPPY_VILLAGER, player.getLocation().add(0,1,0), 6, .6, .2, .6);
                 target.getWorld().spawnParticle(Particle.HAPPY_VILLAGER, target.getLocation().add(0,1,0), 6, .6, .2, .6);
             }
 
             else if(cmd.getName().equalsIgnoreCase("fart") || cmd.getName().equalsIgnoreCase("part") || cmd.getName().equalsIgnoreCase("besina")) {
+                if(!checkForCooldown(player)) return true;
+
+
                 player.sendMessage(getConf("messages.prefix") + getConf("messages.actions.part"));
 
                 player.getWorld().spawnParticle(Particle.SNEEZE, player.getLocation(), 10, .1, 0, .1);
             }
 
             else if(cmd.getName().equalsIgnoreCase("superfart") || cmd.getName().equalsIgnoreCase("superpart") || cmd.getName().equalsIgnoreCase("superbesina")) {
+                if(!checkForCooldown(player)) return true;
+
                 player.sendMessage(getConf("messages.prefix") + getConf("messages.actions.superpart"));
 
                 player.setVelocity(player.getVelocity().add(new Vector(0, 0.5, 0)));
@@ -147,6 +162,8 @@ public final class EmotesWare extends JavaPlugin implements Listener, CommandExe
             }
 
             else if (cmd.getName().equalsIgnoreCase("slap")){
+                if(!checkForCooldown(player)) return true;
+
                 Player target = basicEmoteHandler(player, args, "slap");
 
                 if (target == null) return true;
@@ -156,6 +173,8 @@ public final class EmotesWare extends JavaPlugin implements Listener, CommandExe
             }
 
             else if (cmd.getName().equalsIgnoreCase("superslap")){
+                if(!checkForCooldown(player)) return true;
+
                 Player target = basicEmoteHandler(player, args, "superslap");
 
                 if (target == null) return true;
