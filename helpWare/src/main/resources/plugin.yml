@@ -10,11 +10,9 @@ description: Customizable help command
 commands:
     help:
         description: Shows the help menu
-        usage: /<command> [page]
 
     helpware:
         description: Reload the config with /helpware reload
-        usage: /<command> reload
         permission: helpware.canReload
 
 permissions:

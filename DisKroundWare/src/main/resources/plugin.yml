@@ -1,0 +1,8 @@
+name: DisKroundWare
+version: '1.0'
+main: org.loreware.disKroundWare.DisKroundWare
+api-version: '1.21'
+prefix: LoreWare
+load: STARTUP
+authors: [ robroblore ]
+description: Connects the Kround minecraft server to the Kround discord bot
