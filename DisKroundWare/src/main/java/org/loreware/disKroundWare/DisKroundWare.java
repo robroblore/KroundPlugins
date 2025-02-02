@@ -20,6 +20,7 @@ import org.bukkit.scheduler.BukkitRunnable;
 import org.javacord.api.DiscordApi;
 import org.javacord.api.DiscordApiBuilder;
 import org.javacord.api.entity.activity.ActivityType;
+import org.javacord.api.entity.channel.ServerForumChannel;
 import org.javacord.api.entity.channel.TextChannel;
 import org.javacord.api.entity.intent.Intent;
 import org.javacord.api.entity.message.MessageBuilder;
@@ -38,6 +39,7 @@ public final class DisKroundWare extends JavaPlugin implements Listener, Command
     Server kround;
     TextChannel testingChannel;
     TextChannel leaveJoinChannel;
+    ServerForumChannel helpopChannel;
     DiscordApi api;
     FileConfiguration config;
     private SuperVanish superVanish;
@@ -65,6 +67,8 @@ public final class DisKroundWare extends JavaPlugin implements Listener, Command
                 getConf("discord.crossChat.channelID")).get();
         leaveJoinChannel = kround.getTextChannelById(
                 getConf("discord.leaveJoinMessages.channelID")).get();
+        helpopChannel = kround.getForumChannelById(
+                getConf("discord.helpop.channelID")).get();
 
         createDiscordCommands();
 
@@ -198,6 +202,8 @@ public final class DisKroundWare extends JavaPlugin implements Listener, Command
                             getConf("discord.crossChat.channelID")).get();
                     leaveJoinChannel = kround.getTextChannelById(
                             getConf("discord.leaveJoinMessages.channelID")).get();
+                    helpopChannel = kround.getForumChannelById(
+                            getConf("discord.helpop.channelID")).get();
                     player.sendMessage(getConf("messages.prefix") + "§2Config reloaded.");
                     return true;
                 }
@@ -205,6 +211,9 @@ public final class DisKroundWare extends JavaPlugin implements Listener, Command
 
             else if(cmd.getName().equalsIgnoreCase("helpop") || cmd.getName().equalsIgnoreCase("report") || cmd.getName().equalsIgnoreCase("ticket")) {
                 player.sendMessage("§cComanda nu este disponibila in acest moment.");
+
+
+
             }
 
             else if(cmd.getName().equalsIgnoreCase("test")){
