@@ -1,0 +1,40 @@
+messages:
+  no_permission: "&cYou don't have permission to use this command!"
+  usage: "&cUsage: /artifacts <player> <artifact_name>"
+  player_not_found: "&cPlayer {player} is not online!"
+  invalid_artifact: "&cInvalid artifact name!"
+  received_artifact: "&aYou received an artifact: {artifact}"
+  given_artifact: "&aGave {player} the artifact: {artifact}"
+  reloaded: "&aConfig reloaded successfully!"
+
+artifacts:
+  Dragon_Heart:
+    material: "NETHER_STAR"
+    name: "&cDragon's Heart"
+    lore:
+      - "&7An ancient heart brimming with power."
+      - "&6Provides fire resistance."
+  Soul_Reaper_Mask:
+    material: "WITHER_SKELETON_SKULL"
+    name: "&5Soul Reaper's Mask"
+    lore:
+      - "&7A mask worn by the reapers of souls."
+      - "&cLife steal on enemy kill."
+  Swiftstone:
+    material: "SUGAR"
+    name: "&bSwiftstone"
+    lore:
+      - "&7A mystical stone that enhances speed."
+      - "&eGives a burst of speed when used."
+  Lunar_Tear:
+    material: "ENDER_PEARL"
+    name: "&9Lunar Tear"
+    lore:
+      - "&7A tear from the moon, radiating light."
+      - "&dGrants night vision and regeneration at night."
+  Volcanic_Sigil:
+    material: "MAGMA_CREAM"
+    name: "&6Volcanic Sigil"
+    lore:
+      - "&7A sigil forged in the depths of a volcano."
+      - "&cExplodes upon activation."
