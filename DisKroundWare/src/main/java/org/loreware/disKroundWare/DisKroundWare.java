@@ -8,9 +8,12 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.javacord.api.DiscordApi;
 import org.javacord.api.DiscordApiBuilder;
+import org.javacord.api.entity.activity.ActivityType;
 import org.javacord.api.entity.channel.TextChannel;
 import org.javacord.api.entity.intent.Intent;
 import org.javacord.api.entity.message.MessageBuilder;
@@ -23,10 +26,14 @@ import java.util.Objects;
 
 public final class DisKroundWare extends JavaPlugin implements Listener, CommandExecutor {
 
+    // ----------------- VARS -----------------
     Server kround;
     TextChannel testingChannel;
     DiscordApi api;
+    // ----------------- VARS -----------------
 
+
+    // ----------------- SETUP -----------------
     @Override
     public void onEnable() {
         System.out.println("DisKroundWare plugin enabled");
@@ -36,17 +43,33 @@ public final class DisKroundWare extends JavaPlugin implements Listener, Command
 
         kround = api.getServerById("1278086361412538421").get();
         testingChannel = kround.getTextChannelById("1335292249944096798").get();
-        createCommands();
+        createDiscordCommands();
+
+        updateBotStatus(false);
 
         getServer().getPluginManager().registerEvents(this, this);
 
     }
 
-    public String translateColor(String message){
-        return message.replaceAll("&", "§");
+    @Override
+    public void onDisable() {
+        System.out.println("DisKroundWare plugin disabled");
+        api.disconnect();
     }
 
-    void createCommands(){
+    // ----------------- SETUP -----------------
+
+
+    // ----------------- DISCORD -----------------
+
+    DiscordApi createDiscordAPI(){
+        return new DiscordApiBuilder()
+                .setToken("MTMzNTI3Njc4NDg4NzAwNTM5NQ.GVRMH4._9IMmS5-hjUpk4GiTC_Jug8AIfdy8kH1xjzmYM")
+                .addIntents(Intent.MESSAGE_CONTENT)
+                .login().join();
+    }
+
+    void createDiscordCommands(){
 //        api.addMessageCreateListener(event -> {
 //            if (event.getMessageContent().equalsIgnoreCase("!ip")) {
 //                event.getChannel().sendMessage("KroundV2 ip: 185.206.149.81:25591");
@@ -55,10 +78,10 @@ public final class DisKroundWare extends JavaPlugin implements Listener, Command
 
         api.addMessageCreateListener(this::onMessageCreatedDiscord);
 
-        SlashCommand ipCommand = SlashCommand
-                .with("ip", "Intreaba botul despre ip-ul serverului")
-                .createGlobal(api)
-                .join();
+//        SlashCommand ipCommand = SlashCommand
+//                .with("ip", "Intreaba botul despre ip-ul serverului")
+//                .createGlobal(api)
+//                .join();
 
         SlashCommand sexCommand = SlashCommand
                 .with("sex", "Intreaba botul daca vrea sa faceti sex")
@@ -78,13 +101,6 @@ public final class DisKroundWare extends JavaPlugin implements Listener, Command
         });
     }
 
-    DiscordApi createDiscordAPI(){
-        return new DiscordApiBuilder()
-                .setToken("MTMzNTI3Njc4NDg4NzAwNTM5NQ.GVRMH4._9IMmS5-hjUpk4GiTC_Jug8AIfdy8kH1xjzmYM")
-                .addIntents(Intent.MESSAGE_CONTENT)
-                .login().join();
-    }
-
     public void onMessageCreatedDiscord(MessageCreateEvent event){
         if (event.getServerTextChannel().get() != testingChannel) return;
         if (event.getMessageAuthor().isBotUser()) return;
@@ -98,6 +114,22 @@ public final class DisKroundWare extends JavaPlugin implements Listener, Command
         Bukkit.broadcast(msg);
     }
 
+    public void updateBotStatus(boolean leaving){
+        int onlinePlayers = getServer().getOnlinePlayers().size();
+        if (leaving) onlinePlayers--;
+        if(onlinePlayers == 1){
+            api.updateActivity(ActivityType.WATCHING, " 1 jucator online!");
+            return;
+        }
+        api.updateActivity(ActivityType.WATCHING,
+                onlinePlayers + " jucatori online!");
+    }
+
+    // ----------------- DISCORD -----------------
+
+
+    // ----------------- MINECRAFT -----------------
+
     @EventHandler
     public void onChatEvent(AsyncChatEvent event){
         Player sender = event.getPlayer();
@@ -110,9 +142,28 @@ public final class DisKroundWare extends JavaPlugin implements Listener, Command
                 .send(testingChannel);
     }
 
-    @Override
-    public void onDisable() {
-        System.out.println("DisKroundWare plugin disabled");
-        api.disconnect();
+    @EventHandler
+    public void onPlayerJoin(PlayerJoinEvent event){
+        updateBotStatus(false);
     }
+
+    @EventHandler
+    public void onPlayerLeave(PlayerQuitEvent event){
+        updateBotStatus(true);
+    }
+
+    // ----------------- MINECRAFT -----------------
+
+
+    // ----------------- UTILS -----------------
+
+    public String translateColor(String message){
+        return message.replaceAll("&", "§");
+    }
+
+    void debug(String m){
+        System.out.println(m);
+    }
+
+    // ----------------- UTILS -----------------
 }
