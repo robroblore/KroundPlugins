@@ -1,0 +1,9 @@
+name: Artifacts
+version: '1.0'
+main: alces.artifacts.Artifacts
+api-version: '1.21'
+authors: [ Alces ]
+description: This mod adds special artifacts that can offer unique stats and abilities
+
+commands:
+  artifacts:
