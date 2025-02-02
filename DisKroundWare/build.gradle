@@ -16,11 +16,16 @@ repositories {
         name = "sonatype"
         url = "https://oss.sonatype.org/content/groups/public/"
     }
+
+    flatDir {
+        dirs 'libs'  // This tells Gradle to look in the 'libs' folder for dependencies
+    }
 }
 
 dependencies {
     compileOnly("io.papermc.paper:paper-api:1.21.1-R0.1-SNAPSHOT")
     implementation 'org.javacord:javacord:3.8.0'
+    compileOnly fileTree(dir: 'libs', include: ['*.jar'])  // Include all jars in the 'libs' folder
 }
 
 def targetJavaVersion = 21
@@ -52,6 +57,7 @@ processResources {
 
 tasks {
     shadowJar {
+        exclude 'com/arcaneforge/supervanish/**'
         archiveFileName.set("DisKroundWare.jar")
         // Make sure all dependencies are included
         mergeServiceFiles()  // Include services that may be missing

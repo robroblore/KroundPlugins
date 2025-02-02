@@ -6,3 +6,26 @@ prefix: LoreWare
 load: STARTUP
 authors: [ robroblore ]
 description: Connects the Kround minecraft server to the Kround discord bot
+
+commands:
+  diskroundware:
+    description: Reload the config with /diskroundware reload
+    permission: diskroundware.canReload
+
+  helpop:
+    description: Intreaba stafful o intrebare
+
+  report:
+    description: Intreaba stafful o intrebare
+
+  ticket:
+    description: Intreaba stafful o intrebare
+
+  test:
+    description: Test the plugin
+    permission: diskroundware.canReload
+
+permissions:
+  diskroundware.canReload:
+    description: Can reload the config
+    default: op

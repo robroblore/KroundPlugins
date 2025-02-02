@@ -5,4 +5,28 @@
 #| |__| | \__ \ . \| | | (_) | |_| | | | | (_| |  \  /\  / (_| | | |  __/
 #|_____/|_|___/_|\_\_|  \___/ \__,_|_| |_|\__,_|   \/  \/ \__,_|_|  \___|
 #    Default configuration file made by LoreWare (robroblore)
+#    Note: If you ever want to display the '&' symbol in a message, use '&&' instead.
 #    Permissions:
+
+messages:
+  prefix: "&l&dDisKroundWare ▶ &r"
+
+discord:
+  botActivity:
+    onePlayer: "1 jucator online!"
+    multiplePlayers: "{playerCount} jucatori online!"
+
+  crossChat:
+    enabled: true
+    channelID: "1335292249944096798"
+    minecraftToDiscordMessage: "{player}: {message}"
+    discordToMinecraftMessage: "&9&l<Discord>&r {username}: {message}"
+
+  leaveJoinMessages:
+    enabled: true
+    channelID: "1335292249944096798"
+    joinMessage: "{player} a intrat pe server!"
+    leaveMessage: "{player} a iesit de pe server!"
+
+  commands:
+    online: "Playerii online sunt:" # Followed by a list of online players, each on a new line
