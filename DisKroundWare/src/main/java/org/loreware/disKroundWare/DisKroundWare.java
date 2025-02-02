@@ -3,6 +3,17 @@ package org.loreware.disKroundWare;
 import de.myzelyam.api.vanish.PlayerVanishStateChangeEvent;
 import de.myzelyam.supervanish.SuperVanish;
 import io.papermc.paper.event.player.AsyncChatEvent;
+import net.dv8tion.jda.api.JDA;
+import net.dv8tion.jda.api.JDABuilder;
+import net.dv8tion.jda.api.entities.Activity;
+import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
+import net.dv8tion.jda.api.hooks.ListenerAdapter;
+import net.dv8tion.jda.api.interactions.IntegrationType;
+import net.dv8tion.jda.api.interactions.InteractionContextType;
+import net.dv8tion.jda.api.interactions.commands.build.Commands;
+import net.dv8tion.jda.api.requests.GatewayIntent;
+import net.dv8tion.jda.api.requests.restaction.CommandListUpdateAction;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
 import org.bukkit.Bukkit;
@@ -17,32 +28,23 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
-import org.javacord.api.DiscordApi;
-import org.javacord.api.DiscordApiBuilder;
-import org.javacord.api.entity.activity.ActivityType;
-import org.javacord.api.entity.channel.ServerForumChannel;
-import org.javacord.api.entity.channel.TextChannel;
-import org.javacord.api.entity.intent.Intent;
-import org.javacord.api.entity.message.MessageBuilder;
-import org.javacord.api.entity.server.Server;
-import org.javacord.api.event.message.MessageCreateEvent;
-import org.javacord.api.interaction.SlashCommand;
-import org.javacord.api.interaction.SlashCommandInteraction;
 
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
-import java.util.Objects;
+
+import static net.dv8tion.jda.api.interactions.commands.OptionType.STRING;
 
 public final class DisKroundWare extends JavaPlugin implements Listener, CommandExecutor {
 
     // ----------------- VARS -----------------
-    Server kround;
-    TextChannel testingChannel;
-    TextChannel leaveJoinChannel;
-    ServerForumChannel helpopChannel;
-    DiscordApi api;
     FileConfiguration config;
     private SuperVanish superVanish;
+    DiscordListener discordListener;
+    JDA jda;
+    Guild kround;
+    TextChannel crossChatChannel;
+    TextChannel leaveJoinChannel;
     // ----------------- VARS -----------------
 
 
@@ -58,19 +60,35 @@ public final class DisKroundWare extends JavaPlugin implements Listener, Command
 //        config.options().copyDefaults(true);
 //        saveConfig();
 
+        discordListener = new DiscordListener();
+
+        try{
+            jda = JDABuilder.createLight(
+                            "MTMzNTI3Njc4NDg4NzAwNTM5NQ.Gmnwdt.v4BHSY86ziJvCc9TxT6cKE9HNmK7UrAGV0AXXQ",
+                            EnumSet.of(
+                                    GatewayIntent.GUILD_MESSAGES,
+                                    GatewayIntent.MESSAGE_CONTENT,
+                                    GatewayIntent.GUILD_MEMBERS,
+                                    GatewayIntent.GUILD_MODERATION
+                                    )
+                    )
+                    .setActivity(Activity.watching("your messages"))
+                    .addEventListeners(discordListener)
+                    .build();
+
+            jda.awaitReady();
+            getLogger().info("JDA is ready!");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        kround = jda.getGuildById(getConf("discord.guildID"));
+        crossChatChannel = kround.getTextChannelById(getConf("discord.crossChat.channelID"));
+        leaveJoinChannel = kround.getTextChannelById(getConf("discord.leaveJoinMessages.channelID"));
+
         superVanish = (SuperVanish) getServer().getPluginManager().getPlugin("SuperVanish");
 
-        api = createDiscordAPI();
-
-        kround = api.getServerById("1278086361412538421").get();
-        testingChannel = kround.getTextChannelById(
-                getConf("discord.crossChat.channelID")).get();
-        leaveJoinChannel = kround.getTextChannelById(
-                getConf("discord.leaveJoinMessages.channelID")).get();
-        helpopChannel = kround.getForumChannelById(
-                getConf("discord.helpop.channelID")).get();
-
-        createDiscordCommands();
+        discordListener.createCommands();
 
         new BukkitRunnable() {
             @Override
@@ -85,76 +103,16 @@ public final class DisKroundWare extends JavaPlugin implements Listener, Command
     @Override
     public void onDisable() {
         System.out.println("DisKroundWare plugin disabled");
-        api.disconnect();
+
+        if (jda != null) {
+            jda.shutdown();
+        }
     }
 
     // ----------------- SETUP -----------------
 
 
     // ----------------- DISCORD -----------------
-
-    DiscordApi createDiscordAPI(){
-        return new DiscordApiBuilder()
-                .setToken("MTMzNTI3Njc4NDg4NzAwNTM5NQ.GVRMH4._9IMmS5-hjUpk4GiTC_Jug8AIfdy8kH1xjzmYM")
-                .addIntents(Intent.MESSAGE_CONTENT)
-                .login().join();
-    }
-
-    void createDiscordCommands(){
-//        api.addMessageCreateListener(event -> {
-//            if (event.getMessageContent().equalsIgnoreCase("!ip")) {
-//                event.getChannel().sendMessage("KroundV2 ip: 185.206.149.81:25591");
-//            }
-//        });
-
-        api.addMessageCreateListener(this::onMessageCreatedDiscord);
-
-//        SlashCommand ipCommand = SlashCommand
-//                .with("ip", "Intreaba botul despre ip-ul serverului")
-//                .createGlobal(api)
-//                .join();
-
-        SlashCommand onlineCommand = SlashCommand
-                .with("online", "Primeste o lista cu toti playerii online pe server")
-                .createGlobal(api)
-                .join();
-
-        api.addSlashCommandCreateListener(event -> {
-            SlashCommandInteraction slashCommandInteraction = event.getSlashCommandInteraction();
-            if(Objects.equals(slashCommandInteraction.getFullCommandName(), "online")){
-                StringBuilder answer = new StringBuilder(
-                        getConf("discord.commands.online")).append("\n");
-                for(Player player : Bukkit.getOnlinePlayers()){
-                    if(isVanished(player)) continue;
-                    answer.append(player.getName()).append("\n");
-                }
-
-                slashCommandInteraction.createImmediateResponder()
-                        .setContent(answer.toString())
-                        .respond();
-            }
-//            else if(Objects.equals(slashCommandInteraction.getFullCommandName(), "ip")){
-//                slashCommandInteraction.createImmediateResponder().setContent("KroundV2 ip: 185.206.149.81:25591")
-//                        .respond();
-//            }
-        });
-    }
-
-    public void onMessageCreatedDiscord(MessageCreateEvent event){
-        if (!config.getBoolean("discord.crossChat.enabled")) return;
-        if (event.getServerTextChannel().get() != testingChannel) return;
-        if (event.getMessageAuthor().isBotUser() || !event.getMessageAuthor().isUser()) return;
-
-        String username = event.getMessageAuthor().getDisplayName();
-
-        String message = event.getMessageContent();
-
-        Component msg = Component.text(getConf("discord.crossChat.discordToMinecraftMessage")
-                .replace("{username}", username)
-                .replace("{message}", message));
-
-        Bukkit.broadcast(msg);
-    }
 
     public void updateBotStatus(boolean leaving){
         int onlinePlayers = getServer().getOnlinePlayers().size();
@@ -163,12 +121,12 @@ public final class DisKroundWare extends JavaPlugin implements Listener, Command
         onlinePlayers -= getVanishedCount();
 
         if(onlinePlayers == 1){
-            api.updateActivity(ActivityType.WATCHING, getConf("discord.botActivity.onePlayer"));
+            jda.getPresence().setActivity(Activity.watching(getConf("discord.botActivity.onePlayer")));
             return;
         }
-        api.updateActivity(ActivityType.WATCHING,
+        jda.getPresence().setActivity(Activity.watching(
                 getConf("discord.botActivity.multiplePlayers")
-                        .replace("{playerCount}", String.valueOf(onlinePlayers)));
+                .replace("{playerCount}", String.valueOf(onlinePlayers))));
     }
 
     // ----------------- DISCORD -----------------
@@ -182,11 +140,10 @@ public final class DisKroundWare extends JavaPlugin implements Listener, Command
         Player sender = event.getPlayer();
         TextComponent message = (TextComponent) event.message();
 
-        new MessageBuilder()
-                .append(getConf("discord.crossChat.minecraftToDiscordMessage")
-                        .replace("{player}", sender.getName())
-                        .replace("{message}", message.content()))
-                .send(testingChannel);
+        crossChatChannel.sendMessage(getConf("discord.crossChat.minecraftToDiscordMessage")
+                .replace("{player}", sender.getName())
+                .replace("{message}", message.content()))
+                .queue();
     }
 
     @Override
@@ -198,12 +155,9 @@ public final class DisKroundWare extends JavaPlugin implements Listener, Command
                 if (args.length == 1 && (args[0].equalsIgnoreCase("reload") || args[0].equalsIgnoreCase("rl"))) {
                     reloadConfig();
                     config = getConfig();
-                    testingChannel = kround.getTextChannelById(
-                            getConf("discord.crossChat.channelID")).get();
-                    leaveJoinChannel = kround.getTextChannelById(
-                            getConf("discord.leaveJoinMessages.channelID")).get();
-                    helpopChannel = kround.getForumChannelById(
-                            getConf("discord.helpop.channelID")).get();
+                    kround = jda.getGuildById(getConf("discord.guildID"));
+                    crossChatChannel = kround.getTextChannelById(getConf("discord.crossChat.channelID"));
+                    leaveJoinChannel = kround.getTextChannelById(getConf("discord.leaveJoinMessages.channelID"));
                     player.sendMessage(getConf("messages.prefix") + "§2Config reloaded.");
                     return true;
                 }
@@ -212,7 +166,7 @@ public final class DisKroundWare extends JavaPlugin implements Listener, Command
             else if(cmd.getName().equalsIgnoreCase("helpop") || cmd.getName().equalsIgnoreCase("report") || cmd.getName().equalsIgnoreCase("ticket")) {
                 player.sendMessage("§cComanda nu este disponibila in acest moment.");
 
-
+                //TODO: Helpop command
 
             }
 
@@ -245,10 +199,8 @@ public final class DisKroundWare extends JavaPlugin implements Listener, Command
             updateBotStatus(false);
 
             if(config.getBoolean("discord.leaveJoinMessages.enabled")){
-                new MessageBuilder()
-                        .append(getConf("discord.leaveJoinMessages.joinMessage")
-                                .replace("{player}", event.getPlayer().getName()))
-                        .send(leaveJoinChannel);
+                leaveJoinChannel.sendMessage(getConf("discord.leaveJoinMessages.joinMessage")
+                        .replace("{player}", event.getPlayer().getName())).queue();
             }
         }
     }
@@ -259,10 +211,10 @@ public final class DisKroundWare extends JavaPlugin implements Listener, Command
             updateBotStatus(true);
 
             if(config.getBoolean("discord.leaveJoinMessages.enabled")){
-                new MessageBuilder()
-                        .append(getConf("discord.leaveJoinMessages.leaveMessage")
-                                .replace("{player}", event.getPlayer().getName()))
-                        .send(leaveJoinChannel);
+                if(config.getBoolean("discord.leaveJoinMessages.enabled")){
+                    leaveJoinChannel.sendMessage(getConf("discord.leaveJoinMessages.leaveMessage")
+                            .replace("{player}", event.getPlayer().getName())).queue();
+                }
             }
         }
     }
@@ -278,18 +230,20 @@ public final class DisKroundWare extends JavaPlugin implements Listener, Command
 
         if(config.getBoolean("discord.leaveJoinMessages.enabled")){
             if(event.isVanishing()){
-                new MessageBuilder()
-                        .append(getConf("discord.leaveJoinMessages.leaveMessage")
-                                .replace("{player}", event.getName()))
-                        .send(leaveJoinChannel);
+                leaveJoinChannel.sendMessage(getConf("discord.leaveJoinMessages.leaveMessage")
+                        .replace("{player}", event.getName())).queue();
             } else {
-                new MessageBuilder()
-                        .append(getConf("discord.leaveJoinMessages.joinMessage")
-                                .replace("{player}", event.getName()))
-                        .send(leaveJoinChannel);
+                leaveJoinChannel.sendMessage(getConf("discord.leaveJoinMessages.joinMessage")
+                        .replace("{player}", event.getName())).queue();
             }
         }
 
+    }
+
+    public void broadcastMessage(String message){
+        Component msg = Component.text(translateColor(message));
+
+        Bukkit.broadcast(msg);
     }
 
     // ----------------- MINECRAFT -----------------

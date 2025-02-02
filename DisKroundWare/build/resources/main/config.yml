@@ -12,6 +12,8 @@ messages:
   prefix: "&l&dDisKroundWare ▶ &r"
 
 discord:
+  guildID: "1278086361412538421"
+
   botActivity:
     onePlayer: "1 jucator online!"
     multiplePlayers: "{playerCount} jucatori online!"
@@ -28,5 +30,12 @@ discord:
     joinMessage: "{player} a intrat pe server!"
     leaveMessage: "{player} a iesit de pe server!"
 
+  helpop:
+    enabled: true
+    channelID: "1335693659722616872"
+    message: "{player} a trimis un mesaj la staff: {message}"
+
   commands:
-    online: "Playerii online sunt:" # Followed by a list of online players, each on a new line
+    online:
+      noPlayers: "Nu sunt jucatori online."
+      playersOn: "Playerii online sunt:" # Followed by a list of online players, each on a new line
