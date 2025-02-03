@@ -11,6 +11,30 @@
 messages:
   prefix: "&l&dDisKroundWare ▶ &r"
 
+minecraft:
+  helpop:
+    message: "{player} a trimis un mesaj la staff:\n{message}"
+    sent: "Cererea ta a fost trimisa cu succes!"
+
+  reply:
+    fromDiscordMessage: "&9&l<Discord>&r {username} ti-a raspuns:\n{message}"
+    fromMinecraftMessage: "{staff} ti-a raspuns la helpop:\n{message}"
+    usage: "Foloseste /reply <player> <mesaj> pentru a raspunde la un mesaj."
+    noPlayer: "Jucatorul {player} nu este online."
+    noThread: "Nu exista niciun helpop de la jucatorul {player}."
+    success: "Raspunsul tau catre {player} a fost trimis cu succes!"
+
+  close:
+    usage: "Foloseste /close <player> pentru a inchide un ticket."
+    success: "Ticketul playerului {player} a fost inchis cu succes!"
+    noThread: "Nu exista niciun mesaj de helpop de la jucatorul {player}."
+    fromDiscordClose: "&9&l<Discord>&r {username} a inchis ticketul."
+    fromMinecraftClose: "{staff} a inchis ticketul."
+  
+  crossChat:
+    message: "&9&l<Discord>&r {username}: {message}"
+
+
 discord:
   guildID: "1278086361412538421"
 
@@ -21,8 +45,7 @@ discord:
   crossChat:
     enabled: true
     channelID: "1335292249944096798"
-    minecraftToDiscordMessage: "{player}: {message}"
-    discordToMinecraftMessage: "&9&l<Discord>&r {username}: {message}"
+    message: "{player}: {message}"
 
   leaveJoinMessages:
     enabled: true
@@ -33,7 +56,6 @@ discord:
   helpop:
     enabled: true
     channelID: "1335693659722616872"
-    message: "{player} a trimis un mesaj la staff: {message}"
 
   commands:
     online:

@@ -21,11 +21,19 @@ commands:
   ticket:
     description: Intreaba stafful o intrebare
 
-  test:
-    description: Test the plugin
-    permission: diskroundware.canReload
+  reply:
+    description: Raspunde la un ticket
+    permission: diskroundware.helpop
+
+  close:
+    description: Inchide un ticket
+    permission: diskroundware.helpop
 
 permissions:
   diskroundware.canReload:
     description: Can reload the config
+    default: op
+
+  diskroundware.helpop:
+    description: Can answer helpop questions
     default: op

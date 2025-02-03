@@ -27,6 +27,12 @@ public class DiscordListener extends ListenerAdapter {
                         .setIntegrationTypes(IntegrationType.GUILD_INSTALL)
         );
 
+        commands.addCommands(
+                Commands.slash("close", "Inchide un mesaj de helpop")
+                        .setContexts(InteractionContextType.GUILD)
+                        .setIntegrationTypes(IntegrationType.GUILD_INSTALL)
+        );
+
         commands.queue();
     }
 
@@ -45,7 +51,7 @@ public class DiscordListener extends ListenerAdapter {
 
                 boolean hasPlayers = false;
 
-                for(Player player : Bukkit.getOnlinePlayers()){
+                for(Player player : diskround.getServer().getOnlinePlayers()){
                     if(diskround.isVanished(player)) continue;
                     answer.append(player.getName()).append("\n");
                     hasPlayers = true;
@@ -57,6 +63,29 @@ public class DiscordListener extends ListenerAdapter {
                     event.reply(answer.toString()).queue();
                 }
                 break;
+
+            case "close":
+                if(!(event.getChannel() instanceof ThreadChannel)){
+                    event.reply("Aceasta comanda trebuie folosita numai pe un thread de helpop")
+                            .setEphemeral(true).queue();
+                    return;
+                }
+                if(event.getChannel().asThreadChannel().getParentChannel() != diskround.helpopChannel){
+                    event.reply("Aceasta comanda trebuie folosita numai pe un thread de helpop")
+                            .setEphemeral(true).queue();
+                    return;
+                }
+
+                Player player = diskround.getServer().getPlayer(event.getChannel().getName());
+
+                if(player != null){
+                    player.sendMessage(diskround.getConf("messages.prefix") + diskround.getConf("minecraft.close.fromDiscordClose")
+                            .replace("{username}", event.getUser().getEffectiveName()));
+                }
+
+                event.getChannel().delete().queue();
+                break;
+
             default:
                 event.reply("I can't handle that command right now :(").setEphemeral(true).queue();
         }
@@ -76,15 +105,21 @@ public class DiscordListener extends ListenerAdapter {
 
             String message = event.getMessage().getContentDisplay();
 
-            diskround.broadcastMessage(diskround.getConf("discord.crossChat.discordToMinecraftMessage")
+            diskround.broadcastMessage(diskround.getConf("minecraft.crossChat.message")
                     .replace("{username}", member.getEffectiveName())
                     .replace("{message}", message));
         }
 
-        else if (event.getChannel() instanceof ThreadChannel) {
+        else if (event.getChannel().asThreadChannel().getParentChannel() == diskround.helpopChannel) {
+            if(!diskround.config.getBoolean("discord.helpop.enabled")) return;
             ThreadChannel channel = event.getChannel().asThreadChannel();
+            if (Author.isBot()) return;
 
-            if(!channel.getParentChannel().getId().equals(diskround.getConf("discord.helpop.channelID"))) return;
+            String message = event.getMessage().getContentDisplay();
+
+            diskround.broadcastMessage(diskround.getConf("messages.prefix") + diskround.getConf("minecraft.reply.fromDiscordMessage")
+                    .replace("{username}", member.getEffectiveName())
+                    .replace("{message}", message));
         }
     }
 

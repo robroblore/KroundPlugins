@@ -7,16 +7,13 @@ import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Activity;
 import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
-import net.dv8tion.jda.api.hooks.ListenerAdapter;
-import net.dv8tion.jda.api.interactions.IntegrationType;
-import net.dv8tion.jda.api.interactions.InteractionContextType;
-import net.dv8tion.jda.api.interactions.commands.build.Commands;
+import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.dv8tion.jda.api.requests.GatewayIntent;
-import net.dv8tion.jda.api.requests.restaction.CommandListUpdateAction;
+import net.dv8tion.jda.api.utils.messages.MessageCreateData;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
-import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -29,9 +26,7 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
-import java.util.ArrayList;
-import java.util.EnumSet;
-import java.util.List;
+import java.util.*;
 
 import static net.dv8tion.jda.api.interactions.commands.OptionType.STRING;
 
@@ -45,6 +40,7 @@ public final class DisKroundWare extends JavaPlugin implements Listener, Command
     Guild kround;
     TextChannel crossChatChannel;
     TextChannel leaveJoinChannel;
+    ForumChannel helpopChannel;
     // ----------------- VARS -----------------
 
 
@@ -85,6 +81,7 @@ public final class DisKroundWare extends JavaPlugin implements Listener, Command
         kround = jda.getGuildById(getConf("discord.guildID"));
         crossChatChannel = kround.getTextChannelById(getConf("discord.crossChat.channelID"));
         leaveJoinChannel = kround.getTextChannelById(getConf("discord.leaveJoinMessages.channelID"));
+        helpopChannel = kround.getForumChannelById(getConf("discord.helpop.channelID"));
 
         superVanish = (SuperVanish) getServer().getPluginManager().getPlugin("SuperVanish");
 
@@ -140,7 +137,7 @@ public final class DisKroundWare extends JavaPlugin implements Listener, Command
         Player sender = event.getPlayer();
         TextComponent message = (TextComponent) event.message();
 
-        crossChatChannel.sendMessage(getConf("discord.crossChat.minecraftToDiscordMessage")
+        crossChatChannel.sendMessage(getConf("discord.crossChat.message")
                 .replace("{player}", sender.getName())
                 .replace("{message}", message.content()))
                 .queue();
@@ -158,23 +155,113 @@ public final class DisKroundWare extends JavaPlugin implements Listener, Command
                     kround = jda.getGuildById(getConf("discord.guildID"));
                     crossChatChannel = kround.getTextChannelById(getConf("discord.crossChat.channelID"));
                     leaveJoinChannel = kround.getTextChannelById(getConf("discord.leaveJoinMessages.channelID"));
+                    helpopChannel = kround.getForumChannelById(getConf("discord.helpop.channelID"));
                     player.sendMessage(getConf("messages.prefix") + "§2Config reloaded.");
                     return true;
                 }
             }
 
             else if(cmd.getName().equalsIgnoreCase("helpop") || cmd.getName().equalsIgnoreCase("report") || cmd.getName().equalsIgnoreCase("ticket")) {
-                player.sendMessage("§cComanda nu este disponibila in acest moment.");
+                String message = String.join(" ", args);
 
-                //TODO: Helpop command
+                player.sendMessage(getConf("messages.prefix") + getConf("minecraft.helpop.sent"));
 
+                boolean threadExists = false;
+                for (ThreadChannel thread : helpopChannel.getThreadChannels()) {
+                    if (thread.getName().equalsIgnoreCase(player.getName())) {
+                        thread.sendMessage(player.getName() + ": " + message).queue();
+                        threadExists = true;
+                        break;
+                    }
+                }
+
+                if (!threadExists) {
+                    helpopChannel.createForumPost(player.getName(), MessageCreateData
+                                    .fromContent(player.getName() + ": " + message))
+                            .queue();
+                }
+
+                for(Player staff : getServer().getOnlinePlayers()){
+                    if(staff.hasPermission("diskroundware.helpop")){
+                        staff.sendMessage(getConf("messages.prefix") + getConf("minecraft.helpop.message")
+                                .replace("{player}", player.getName())
+                                .replace("{message}", message));
+                    }
+                }
             }
 
-            else if(cmd.getName().equalsIgnoreCase("test")){
-                Player target = getServer().getPlayer("robroblore");
+            else if(cmd.getName().equalsIgnoreCase("reply")){
+                if(args.length < 2){
+                    player.sendMessage(getConf("messages.prefix") + getConf("minecraft.reply.usage"));
+                    return true;
+                }
+                Player target = getServer().getPlayer(args[0]);
 
+                if(target == null){
+                    player.sendMessage(getConf("messages.prefix") + getConf("minecraft.reply.noPlayer")
+                            .replace("{player}", args[0]));
+                    return true;
+                }
 
-                player.sendMessage(String.valueOf(isVanished(target)));
+                String message = String.join(" ", Arrays.copyOfRange(args, 1, args.length));
+
+                boolean threadExists = false;
+
+                for (ThreadChannel thread : helpopChannel.getThreadChannels()) {
+                    if (thread.getName().equalsIgnoreCase(player.getName())) {
+                        thread.sendMessage(player.getName() + ": " + message).queue();
+                        threadExists = true;
+                        break;
+                    }
+                }
+                if(!threadExists){
+                    player.sendMessage(getConf("messages.prefix") + getConf("minecraft.reply.noThread")
+                            .replace("{player}", target.getName()));
+                    return true;
+                }
+
+                target.sendMessage(getConf("messages.prefix") + getConf("minecraft.reply.fromMinecraftMessage")
+                        .replace("{staff}", player.getName())
+                        .replace("{message}", message));
+
+                player.sendMessage(getConf("messages.prefix") +
+                        getConf("minecraft.reply.success").replace("{player}", target.getName()));
+            }
+
+            else if(cmd.getName().equalsIgnoreCase("close")){
+
+                if(args.length < 1){
+                    player.sendMessage(getConf("messages.prefix") + getConf("minecraft.close.usage"));
+                    return true;
+                }
+
+                String pName = args[0];
+
+                boolean threadExists = false;
+
+                for (ThreadChannel thread : helpopChannel.getThreadChannels()) {
+                    if (thread.getName().equalsIgnoreCase(pName)) {
+                        thread.delete().queue();
+                        threadExists = true;
+                        break;
+                    }
+                }
+
+                if(threadExists){
+                    player.sendMessage(getConf("messages.prefix") + getConf("minecraft.close.success")
+                            .replace("{player}", pName));
+
+                    Player target = getServer().getPlayer(pName);
+
+                    if(target != null){
+                        target.sendMessage(getConf("messages.prefix") + getConf("minecraft.close.fromMinecraftClose")
+                                .replace("{staff}", player.getName()));
+                    }
+
+                } else {
+                    player.sendMessage(getConf("messages.prefix") + getConf("minecraft.close.noThread")
+                            .replace("{player}", pName));
+                }
             }
         }
 
@@ -188,6 +275,28 @@ public final class DisKroundWare extends JavaPlugin implements Listener, Command
 
                 list.add("reload");
                 return list;
+            }
+        } else if (cmd.getName().equalsIgnoreCase("helpop") || cmd.getName().equalsIgnoreCase("report") || cmd.getName().equalsIgnoreCase("ticket")) {
+            return Collections.emptyList();
+        } else if (cmd.getName().equalsIgnoreCase("reply")) {
+            if(args.length == 1){
+                List<String> list = new ArrayList<>();
+                for(ThreadChannel thread : helpopChannel.getThreadChannels()){
+                    list.add(thread.getName());
+                }
+                return list;
+            }
+        } else if (cmd.getName().equalsIgnoreCase("close")) {
+            if(args.length == 1){
+                List<String> list = new ArrayList<>();
+                for(ThreadChannel thread : helpopChannel.getThreadChannels()){
+                    list.add(thread.getName());
+                }
+                return list;
+            }
+
+            if(args.length > 1){
+                return Collections.emptyList();
             }
         }
         return null;
@@ -243,7 +352,7 @@ public final class DisKroundWare extends JavaPlugin implements Listener, Command
     public void broadcastMessage(String message){
         Component msg = Component.text(translateColor(message));
 
-        Bukkit.broadcast(msg);
+        getServer().broadcast(msg);
     }
 
     // ----------------- MINECRAFT -----------------
