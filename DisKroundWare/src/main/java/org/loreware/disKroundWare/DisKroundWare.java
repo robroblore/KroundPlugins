@@ -14,10 +14,13 @@ import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.utils.messages.MessageCreateData;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
+import net.kyori.adventure.title.Title;
+import org.bukkit.Sound;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -25,7 +28,12 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.jetbrains.annotations.NotNull;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.Reader;
+import java.time.Duration;
 import java.util.*;
 
 import static net.dv8tion.jda.api.interactions.commands.OptionType.STRING;
@@ -34,6 +42,7 @@ public final class DisKroundWare extends JavaPlugin implements Listener, Command
 
     // ----------------- VARS -----------------
     FileConfiguration config;
+    FileConfiguration links;
     private SuperVanish superVanish;
     DiscordListener discordListener;
     JDA jda;
@@ -49,12 +58,11 @@ public final class DisKroundWare extends JavaPlugin implements Listener, Command
     public void onEnable() {
         System.out.println("DisKroundWare plugin enabled");
 
-        saveResource("config.yml", /* replace */ true);
+        saveDefaultConfig();
         config = getConfig();
-//        saveDefaultConfig();
-//        config = getConfig();
-//        config.options().copyDefaults(true);
-//        saveConfig();
+        config.options().copyDefaults(true);
+        saveConfig();
+        links = getLinksConfig();
 
         discordListener = new DiscordListener();
 
@@ -162,6 +170,11 @@ public final class DisKroundWare extends JavaPlugin implements Listener, Command
             }
 
             else if(cmd.getName().equalsIgnoreCase("helpop") || cmd.getName().equalsIgnoreCase("report") || cmd.getName().equalsIgnoreCase("ticket")) {
+                if(args.length == 0){
+                    player.sendMessage(getConf("messages.prefix") + getConf("minecraft.helpop.usage"));
+                    return true;
+                }
+
                 String message = String.join(" ", args);
 
                 player.sendMessage(getConf("messages.prefix") + getConf("minecraft.helpop.sent"));
@@ -208,12 +221,21 @@ public final class DisKroundWare extends JavaPlugin implements Listener, Command
                 boolean threadExists = false;
 
                 for (ThreadChannel thread : helpopChannel.getThreadChannels()) {
-                    if (thread.getName().equalsIgnoreCase(player.getName())) {
+                    if (thread.getName().equalsIgnoreCase(target.getName())) {
                         thread.sendMessage(player.getName() + ": " + message).queue();
                         threadExists = true;
                         break;
                     }
                 }
+
+                for(Player staff : getServer().getOnlinePlayers()){
+                    if(staff.hasPermission("diskroundware.helpop") && staff != player){
+                        staff.sendMessage(getConf("messages.prefix") + getConf("minecraft.reply.staffToStaff")
+                                .replace("{staff}", player.getName())
+                                .replace("{player}", target.getName()));
+                    }
+                }
+
                 if(!threadExists){
                     player.sendMessage(getConf("messages.prefix") + getConf("minecraft.reply.noThread")
                             .replace("{player}", target.getName()));
@@ -223,6 +245,18 @@ public final class DisKroundWare extends JavaPlugin implements Listener, Command
                 target.sendMessage(getConf("messages.prefix") + getConf("minecraft.reply.fromMinecraftMessage")
                         .replace("{staff}", player.getName())
                         .replace("{message}", message));
+
+                Title title = Title.title(
+                        Component.text(getConf("minecraft.helpop.title")),
+                        Component.text(getConf("minecraft.helpop.subtitle")
+                                .replace("{staff}", player.getName())
+                                .replace("{platform}", "minecraft")),
+                        Title.Times.times(Duration.ofSeconds(1),
+                                Duration.ofSeconds(config.getInt("minecraft.helpop.titleDuration")), Duration.ofSeconds(1))
+                );
+
+                target.showTitle(title);
+                target.playSound(target, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, (float) config.getDouble("minecraft.helpop.volume"), 1f);
 
                 player.sendMessage(getConf("messages.prefix") +
                         getConf("minecraft.reply.success").replace("{player}", target.getName()));
@@ -241,7 +275,11 @@ public final class DisKroundWare extends JavaPlugin implements Listener, Command
 
                 for (ThreadChannel thread : helpopChannel.getThreadChannels()) {
                     if (thread.getName().equalsIgnoreCase(pName)) {
-                        thread.delete().queue();
+                        thread.sendMessage(getConf("discord.close.message")
+                                .replace("{staff}", player.getName())
+                                .replace("{platform}", "minecraft")).queue(response -> {
+                            thread.getManager().setArchived(true).queue();
+                        });
                         threadExists = true;
                         break;
                     }
@@ -263,6 +301,18 @@ public final class DisKroundWare extends JavaPlugin implements Listener, Command
                             .replace("{player}", pName));
                 }
             }
+
+            else if (cmd.getName().equalsIgnoreCase("link")) {
+                if (args.length == 0) {
+                    player.sendMessage(getConf("messages.prefix") + getConf("minecraft.link.usage"));
+                    return true;
+                }
+
+                if (args[0].equalsIgnoreCase("confirm")) {
+                    player.sendMessage(getConf("messages.prefix") + getConf("minecraft.link.confirm"));
+                    return true;
+                }
+            }
         }
 
         return true;
@@ -276,17 +326,13 @@ public final class DisKroundWare extends JavaPlugin implements Listener, Command
                 list.add("reload");
                 return list;
             }
-        } else if (cmd.getName().equalsIgnoreCase("helpop") || cmd.getName().equalsIgnoreCase("report") || cmd.getName().equalsIgnoreCase("ticket")) {
+        }
+
+        else if (cmd.getName().equalsIgnoreCase("helpop") || cmd.getName().equalsIgnoreCase("report") || cmd.getName().equalsIgnoreCase("ticket")) {
             return Collections.emptyList();
-        } else if (cmd.getName().equalsIgnoreCase("reply")) {
-            if(args.length == 1){
-                List<String> list = new ArrayList<>();
-                for(ThreadChannel thread : helpopChannel.getThreadChannels()){
-                    list.add(thread.getName());
-                }
-                return list;
-            }
-        } else if (cmd.getName().equalsIgnoreCase("close")) {
+        }
+
+        else if (cmd.getName().equalsIgnoreCase("reply")) {
             if(args.length == 1){
                 List<String> list = new ArrayList<>();
                 for(ThreadChannel thread : helpopChannel.getThreadChannels()){
@@ -298,6 +344,27 @@ public final class DisKroundWare extends JavaPlugin implements Listener, Command
             if(args.length > 1){
                 return Collections.emptyList();
             }
+        }
+
+        else if (cmd.getName().equalsIgnoreCase("close")) {
+            if(args.length == 1){
+                List<String> list = new ArrayList<>();
+                for(ThreadChannel thread : helpopChannel.getThreadChannels()){
+                    list.add(thread.getName());
+                }
+                return list;
+            }
+
+            if(args.length > 1){
+                return Collections.emptyList();
+            }
+        }
+
+        else if (cmd.getName().equalsIgnoreCase("link")) {
+            List<String> list = new ArrayList<>();
+
+            list.add("confirm");
+            return list;
         }
         return null;
     }
@@ -359,6 +426,24 @@ public final class DisKroundWare extends JavaPlugin implements Listener, Command
 
 
     // ----------------- UTILS -----------------
+
+    public YamlConfiguration getLinksConfig(){
+        File linksFile = new File(getDataFolder(), "links.yml");
+        if (!linksFile.exists()) {
+            saveResource("links.yml", false);
+        }
+
+        return YamlConfiguration.loadConfiguration(linksFile);
+    }
+
+    public void saveLinksConfig(){
+        File linksFile = new File(getDataFolder(), "links.yml");
+        try {
+            links.save(linksFile);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
     public String translateColor(String message){
         return message.replaceAll("&", "§").replaceAll("§§", "&");

@@ -11,8 +11,13 @@ import net.dv8tion.jda.api.interactions.IntegrationType;
 import net.dv8tion.jda.api.interactions.InteractionContextType;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
 import net.dv8tion.jda.api.requests.restaction.CommandListUpdateAction;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.title.Title;
 import org.bukkit.Bukkit;
+import org.bukkit.Sound;
 import org.bukkit.entity.Player;
+
+import java.time.Duration;
 
 public class DiscordListener extends ListenerAdapter {
 
@@ -80,10 +85,14 @@ public class DiscordListener extends ListenerAdapter {
 
                 if(player != null){
                     player.sendMessage(diskround.getConf("messages.prefix") + diskround.getConf("minecraft.close.fromDiscordClose")
-                            .replace("{username}", event.getUser().getEffectiveName()));
+                            .replace("{username}", event.getMember().getEffectiveName()));
                 }
 
-                event.getChannel().delete().queue();
+                event.reply(diskround.getConf("discord.close.message")
+                        .replace("{staff}", event.getMember().getEffectiveName())
+                        .replace("{platform}", "discord")).setEphemeral(false).queue(response -> {
+                    event.getChannel().asThreadChannel().getManager().setArchived(true).queue();
+                });
                 break;
 
             default:
@@ -110,6 +119,10 @@ public class DiscordListener extends ListenerAdapter {
                     .replace("{message}", message));
         }
 
+        else if(!(event.getChannel() instanceof ThreadChannel)){
+            return;
+        }
+
         else if (event.getChannel().asThreadChannel().getParentChannel() == diskround.helpopChannel) {
             if(!diskround.config.getBoolean("discord.helpop.enabled")) return;
             ThreadChannel channel = event.getChannel().asThreadChannel();
@@ -117,9 +130,38 @@ public class DiscordListener extends ListenerAdapter {
 
             String message = event.getMessage().getContentDisplay();
 
-            diskround.broadcastMessage(diskround.getConf("messages.prefix") + diskround.getConf("minecraft.reply.fromDiscordMessage")
+            Player player = diskround.getServer().getPlayer(channel.getName());
+
+            if (player == null) {
+                event.getMessage().reply(diskround.getConf("discord.helpop.playerOffline")
+                        .replace("{player}", channel.getName())).queue();
+                return;
+            }
+
+            for(Player staff : diskround.getServer().getOnlinePlayers()){
+                if(staff.hasPermission("diskroundware.helpop")){
+                    staff.sendMessage(diskround.getConf("messages.prefix") +
+                            diskround.getConf("minecraft.reply.staffToStaff")
+                            .replace("{staff}", member.getEffectiveName())
+                            .replace("{player}", player.getName()));
+                }
+            }
+
+            player.sendMessage(diskround.getConf("messages.prefix") + diskround.getConf("minecraft.reply.fromDiscordMessage")
                     .replace("{username}", member.getEffectiveName())
                     .replace("{message}", message));
+
+            Title title = Title.title(
+                    Component.text(diskround.getConf("minecraft.helpop.title")),
+                    Component.text(diskround.getConf("minecraft.helpop.subtitle")
+                            .replace("{staff}", member.getEffectiveName())
+                            .replace("{platform}", "discord")),
+                    Title.Times.times(Duration.ofSeconds(1),
+                            Duration.ofSeconds(diskround.config.getInt("minecraft.helpop.titleDuration")), Duration.ofSeconds(1))
+            );
+
+            player.showTitle(title);
+            player.playSound(player, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, (float) diskround.config.getDouble("minecraft.helpop.volume"), 1f);
         }
     }
 

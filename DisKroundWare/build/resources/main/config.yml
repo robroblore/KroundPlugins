@@ -1,9 +1,9 @@
-#_____  _     _  __                          ___          __
-#|  __ \(_)   | |/ /                         | \ \        / /
-#| |  | |_ ___| ' / _ __ ___  _   _ _ __   __| |\ \  /\  / /_ _ _ __ ___
-#| |  | | / __|  < | '__/ _ \| | | | '_ \ / _` | \ \/  \/ / _` | '__/ _ \
-#| |__| | \__ \ . \| | | (_) | |_| | | | | (_| |  \  /\  / (_| | | |  __/
-#|_____/|_|___/_|\_\_|  \___/ \__,_|_| |_|\__,_|   \/  \/ \__,_|_|  \___|
+# _____  _     _  __                          ___          __
+# |  __ \(_)   | |/ /                         | \ \        / /
+# | |  | |_ ___| ' / _ __ ___  _   _ _ __   __| |\ \  /\  / /_ _ _ __ ___
+# | |  | | / __|  < | '__/ _ \| | | | '_ \ / _` | \ \/  \/ / _` | '__/ _ \
+# | |__| | \__ \ . \| | | (_) | |_| | | | | (_| |  \  /\  / (_| | | |  __/
+# |_____/|_|___/_|\_\_|  \___/ \__,_|_| |_|\__,_|   \/  \/ \__,_|_|  \___|
 #    Default configuration file made by LoreWare (robroblore)
 #    Note: If you ever want to display the '&' symbol in a message, use '&&' instead.
 #    Permissions:
@@ -13,8 +13,13 @@ messages:
 
 minecraft:
   helpop:
+    usage: "Foloseste /helpop <mesaj> pentru a trimite un mesaj la staff."
     message: "{player} a trimis un mesaj la staff:\n{message}"
     sent: "Cererea ta a fost trimisa cu succes!"
+    title: "&b&kA&r&bAi primit un raspuns la helpop!&kA"
+    subtitle: "&d{staff} ti-a raspuns de pe {platform}!"
+    titleDuration: 3 # In seconds, keep in mind there is already 1 second of fade in and 1 second of fade out
+    volume: 1.0
 
   reply:
     fromDiscordMessage: "&9&l<Discord>&r {username} ti-a raspuns:\n{message}"
@@ -23,6 +28,7 @@ minecraft:
     noPlayer: "Jucatorul {player} nu este online."
     noThread: "Nu exista niciun helpop de la jucatorul {player}."
     success: "Raspunsul tau catre {player} a fost trimis cu succes!"
+    staffToStaff: "{staff} i-a raspuns lui {player}."
 
   close:
     usage: "Foloseste /close <player> pentru a inchide un ticket."
@@ -56,6 +62,10 @@ discord:
   helpop:
     enabled: true
     channelID: "1335693659722616872"
+    playerOffline: "Jucatorul {player} nu mai este online!"
+
+  close:
+    message: "Ticketul a fost inchis de catre {staff} pe {platform}."
 
   commands:
     online:
