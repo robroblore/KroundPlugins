@@ -28,15 +28,11 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
-import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.Reader;
 import java.time.Duration;
 import java.util.*;
-
-import static net.dv8tion.jda.api.interactions.commands.OptionType.STRING;
 
 public final class DisKroundWare extends JavaPlugin implements Listener, CommandExecutor {
 
@@ -303,13 +299,50 @@ public final class DisKroundWare extends JavaPlugin implements Listener, Command
             }
 
             else if (cmd.getName().equalsIgnoreCase("link")) {
-                if (args.length == 0) {
-                    player.sendMessage(getConf("messages.prefix") + getConf("minecraft.link.usage"));
-                    return true;
-                }
+                String entry = links.getString(String.valueOf(player.getUniqueId()));
 
-                if (args[0].equalsIgnoreCase("confirm")) {
-                    player.sendMessage(getConf("messages.prefix") + getConf("minecraft.link.confirm"));
+                if (args.length == 0 || args[0].equalsIgnoreCase("discord")) {
+                    if(entry != null && entry.length() > 6){
+                        player.sendMessage(getConf("messages.prefix") + getConf("minecraft.link.alreadyLinked"));
+                        player.sendMessage(getConf("messages.prefix") + getConf("minecraft.link.removeUsage"));
+                        return true;
+                    }
+
+                    int code = new Random().nextInt(100000, 999999);
+                    links.set(String.valueOf(player.getUniqueId()), String.valueOf(code));
+
+                    player.sendMessage(getConf("messages.prefix") + getConf("minecraft.link.code")
+                            .replace("{code}", String.valueOf(code)));
+
+                    player.sendMessage(getConf("messages.prefix") + getConf("minecraft.link.codeUsage")
+                            .replace("{code}", String.valueOf(code)));
+
+                    saveLinksConfig();
+                    return true;
+                } else if(args[0].equalsIgnoreCase("confirm")){
+                    if(entry == null || !entry.startsWith("?")){
+                        for(String line : getConfList("minecraft.link.notLinked")){
+                            player.sendMessage(getConf("messages.prefix") + line);
+                        }
+                        return true;
+                    }
+
+                    links.set(String.valueOf(player.getUniqueId()), entry.substring(1));
+                    saveLinksConfig();
+
+                    kround.retrieveMemberById(entry.substring(1)).queue(member -> {
+                        player.sendMessage(getConf("messages.prefix") + getConf("minecraft.link.success")
+                                .replace("{username}", member.getEffectiveName()));
+                    });
+
+                    return true;
+                } else if(args[0].equalsIgnoreCase("remove")) {
+                    // Remove the link
+                    links.set(String.valueOf(player.getUniqueId()), null);
+
+                    player.sendMessage(getConf("messages.prefix") + getConf("minecraft.link.removeSuccess"));
+
+                    saveLinksConfig();
                     return true;
                 }
             }
@@ -363,7 +396,9 @@ public final class DisKroundWare extends JavaPlugin implements Listener, Command
         else if (cmd.getName().equalsIgnoreCase("link")) {
             List<String> list = new ArrayList<>();
 
+            list.add("discord");
             list.add("confirm");
+            list.add("remove");
             return list;
         }
         return null;

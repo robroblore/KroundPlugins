@@ -13,8 +13,18 @@ messages:
 
 minecraft:
   link:
-    usage: "Foloseste /link <cod> pentru a conecta contul de discord cu contul de minecraft."
     success: "Contul tau de discord {username} a fost conectat cu succes!"
+    alreadyLinked: "Contul tau de minecraft este deja conectat cu un cont de discord."
+    removeUsage: "Foloseste /link remove pentru a deconecta contul de discord asociat contului de minecraft."
+    code: "Codul tau de verificare este: {code}"
+    codeUsage: "Foloseste /link {code} pe discord pentru a conecta conturile."
+    removeSuccess: "Contul tau de discord a fost deconectat cu succes!"
+    noCode: "Nu exista niciun cod de verificare pentru contul tau de minecraft. Foloseste /link pentru a primi un cod de verificare. Daca nu poti genera un cod, foloseste /link remove."
+
+    notLinked:
+      - "Contul tau de minecraft nu a primit o confirmare de pe discord."
+      - "Foloseste /link in joc pentru a primi un cod de verificare."
+      - "Daca nu poti genera un cod, foloseste /link remove in joc."
 
   helpop:
     usage: "Foloseste /helpop <mesaj> pentru a trimite un mesaj la staff."
@@ -75,3 +85,6 @@ discord:
     online:
       noPlayers: "Nu sunt jucatori online."
       playersOn: "Playerii online sunt:" # Followed by a list of online players, each on a new line
+
+    link:
+      success: "Aproape ti-ai conectat conturile! Pentru a finaliza conectarea cu contul {player}, foloseste /link confirm in joc."

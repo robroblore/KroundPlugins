@@ -9,6 +9,7 @@ import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.IntegrationType;
 import net.dv8tion.jda.api.interactions.InteractionContextType;
+import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
 import net.dv8tion.jda.api.requests.restaction.CommandListUpdateAction;
 import net.kyori.adventure.text.Component;
@@ -18,6 +19,7 @@ import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 
 import java.time.Duration;
+import java.util.UUID;
 
 public class DiscordListener extends ListenerAdapter {
 
@@ -36,6 +38,13 @@ public class DiscordListener extends ListenerAdapter {
                 Commands.slash("close", "Inchide un mesaj de helpop")
                         .setContexts(InteractionContextType.GUILD)
                         .setIntegrationTypes(IntegrationType.GUILD_INSTALL)
+        );
+
+        commands.addCommands(
+                Commands.slash("link", "Conecteaza contul de discord cu cel de minecraft")
+                        .setContexts(InteractionContextType.GUILD)
+                        .setIntegrationTypes(IntegrationType.GUILD_INSTALL)
+                        .addOption(OptionType.STRING, "code", "Codul de conectare", true)
         );
 
         commands.queue();
@@ -93,6 +102,29 @@ public class DiscordListener extends ListenerAdapter {
                         .replace("{platform}", "discord")).setEphemeral(false).queue(response -> {
                     event.getChannel().asThreadChannel().getManager().setArchived(true).queue();
                 });
+                break;
+
+            case "link":
+                String code = event.getOption("code").getAsString();
+
+                for(String uuid : diskround.links.getKeys(false)){
+                    String entry = diskround.links.getString(uuid);
+                    if(entry != null && entry.equals(code)){
+                        diskround.links.set(uuid, "?" + event.getMember().getId());
+                        diskround.saveLinksConfig();
+
+                        UUID playerUUID = UUID.fromString(uuid);
+
+                        event.reply(diskround.getConf("discord.commands.link.success")
+                                .replace("{player}", diskround.getServer().getOfflinePlayer(playerUUID).getName())).setEphemeral(true).queue();
+                        return;
+                    }
+                }
+
+
+                event.reply(diskround.getConf("discord.commands.link.noCode")).setEphemeral(true).queue();
+
+
                 break;
 
             default:

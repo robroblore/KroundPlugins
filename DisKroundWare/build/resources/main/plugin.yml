@@ -29,6 +29,9 @@ commands:
     description: Inchide un ticket
     permission: diskroundware.helpop
 
+  link:
+    description: Conecteaza contul de discord cu cel de minecraft
+
 permissions:
   diskroundware.canReload:
     description: Can reload the config
