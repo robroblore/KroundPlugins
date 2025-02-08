@@ -6,7 +6,7 @@
 # |_____/|_|___/_|\_\_|  \___/ \__,_|_| |_|\__,_|   \/  \/ \__,_|_|  \___|
 #    Default configuration file made by LoreWare (robroblore)
 #    Note: If you ever want to display the '&' symbol in a message, use '&&' instead.
-#    Permissions:
+#    Permissions: diskroundware.helpop, diskroundware.canReload
 
 messages:
   prefix: "&l&dDisKroundWare ▶ &r"

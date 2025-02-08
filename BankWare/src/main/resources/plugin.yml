@@ -1,0 +1,9 @@
+name: BankWare
+version: '1.0'
+main: org.loreware.bankWare.BankWare
+api-version: '1.21'
+prefix: LoreWare
+load: STARTUP
+authors: [ robroblore ]
+description: Bank with interest and a vault
+depend: [Citizens]
