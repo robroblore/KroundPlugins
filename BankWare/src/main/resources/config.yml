@@ -10,8 +10,15 @@
 
 messages:
   prefix: "&l&dBankWare ▶ &r"
+  bankerInteract: "&2Buna, ma numesc {name}, cu ce te pot ajuta?"
 
-locations:
-  bankers:
-
-  vaults:
+UI:
+  bankerTitle: "&2Banca"
+  depositItem: "&2Depoziteaza"
+  withdrawItem: "&2Retrage"
+  infoItem: "&2Informatii"
+  infoItemLore:
+    - "Sold curent: &2{balance}"
+    - "Dobanda: &2{interest}%"
+    - "Suma dobanzii: &2{interestAmount}"
+    - "Data urmatoarei dobanzi: &2{nextInterestDate}"

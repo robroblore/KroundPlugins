@@ -1,18 +1,26 @@
 package org.loreware.bankWare;
 
 import net.citizensnpcs.api.CitizensAPI;
+import net.citizensnpcs.api.event.NPCRightClickEvent;
 import net.citizensnpcs.api.npc.NPC;
 import net.citizensnpcs.api.npc.NPCRegistry;
 import net.citizensnpcs.trait.SkinTrait;
+import net.kyori.adventure.text.Component;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
-import org.bukkit.World;
+import org.bukkit.Material;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.ArrayList;
@@ -22,75 +30,40 @@ import java.util.List;
 public final class BankWare extends JavaPlugin implements Listener, CommandExecutor {
 
     FileConfiguration config;
-    List<NPC> spawnedNPCs = new ArrayList<>();
-
 
     @Override
     public void onEnable() {
         System.out.println("BankWare plugin enabled");
 
-//        saveResource("config.yml", /* replace */ true);
-//        config = getConfig();
-
-        saveDefaultConfig();
+        saveResource("config.yml", /* replace */ true);
         config = getConfig();
-        config.options().copyDefaults(true);
-        saveConfig();
 
-        for (NPC npc : CitizensAPI.getNPCRegistry()) {
-            if (npc.data().get("destroy")) {
-                npc.destroy(); // Destroy only non-persistent NPCs
-            }
-        }
-
-        loadPOIs();
+//        saveDefaultConfig();
+//        config = getConfig();
+//        config.options().copyDefaults(true);
+//        saveConfig();
 
         getServer().getPluginManager().registerEvents(this, this);
     }
 
-    public void loadPOIs() {
-        for (NPC npc: spawnedNPCs) {
-            npc.destroy();
-        }
 
-        if(config.getConfigurationSection("locations.bankers") != null){
-            for (String banker : config.getConfigurationSection("locations.bankers").getKeys(false)) {
-                Location loc = loadLocation("bankers", banker);
-                if (loc == null) continue;
-
-                createNPCWithSkin(loc, banker, getConf("locations.bankers." + banker + ".skin"));
+    public boolean deleteBanker(String name) {
+        for (NPC npc : CitizensAPI.getNPCRegistry()) {
+            if (npc.getName().equalsIgnoreCase(name) && npc.data().get("isBanker") != null) {
+                npc.destroy();
+                return true;
             }
         }
-
-
-        if(config.getConfigurationSection("locations.vaults") != null) {
-            for (String vault : config.getConfigurationSection("locations.vaults").getKeys(false)) {
-                Location loc = loadLocation("vaults", vault);
-                if (loc == null) continue;
-            }
-        }
-    }
-
-    public boolean deleteNPC(String name) {
-        if (config.contains("locations.bankers." + name)) {
-            config.set("locations.bankers." + name, null);
-            saveConfig();
-            loadPOIs();
-
-            return true;
-        }
-
         return false;
     }
 
-    public NPC createNPCWithSkin(Location location, String npcName, String skinName) {
+    public NPC createBanker(Location location, String npcName, String skinName) {
         NPCRegistry registry = CitizensAPI.getNPCRegistry();
 
         // Create an NPC (fake player)
         NPC npc = registry.createNPC(EntityType.PLAYER, npcName);
 
-        npc.data().setPersistent("destroy", true);
-
+        npc.data().setPersistent("isBanker",true);
 
         // Spawn the NPC at a location
         npc.spawn(location);
@@ -98,37 +71,85 @@ public final class BankWare extends JavaPlugin implements Listener, CommandExecu
         // Set the skin
         npc.getOrAddTrait(SkinTrait.class).setSkinName(skinName);
 
-        spawnedNPCs.add(npc);
-        saveLocation("bankers", npcName, location);
-        config.set("locations.bankers." + npcName + ".skin", skinName);
         saveConfig();
 
         return npc;
     }
 
-    public void saveLocation(String poi, String name, Location loc) {
-        config.set("locations." + poi + "." + name + ".world", loc.getWorld().getName());
-        config.set("locations." + poi + "." + name + ".x", loc.getX());
-        config.set("locations." + poi + "." + name + ".y", loc.getY());
-        config.set("locations." + poi + "." + name + ".z", loc.getZ());
-        config.set("locations." + poi + "." + name + ".yaw", loc.getYaw());
-        config.set("locations." + poi + "." + name + ".pitch", loc.getPitch());
-        saveConfig();
+    @EventHandler
+    public void onNpcClick(NPCRightClickEvent event) {
+        NPC npc = event.getNPC();
+
+        if (npc.data().get("isBanker") == null) {
+            return;
+        }
+
+        Player player = event.getClicker();
+
+        player.sendMessage(getConf("messages.prefix") + getConf("messages.bankerInteract")
+                .replace("{name}", npc.getName()));
+        openBankerGUI(player);
     }
 
-    public Location loadLocation(String poi, String name) {
-        if (!config.contains("locations." + poi + "." + name)) return null;
+    public void openBankerGUI(Player player) {
+        // Use the new method to create the inventory with a title as Component
+        Inventory inv = Bukkit.createInventory(null, 27, Component.text(getConf("UI.bankerTitle")));
 
-        World world = getServer().getWorld(config.getString("locations." + poi + "." + name + ".world"));
-        double x = config.getDouble("locations." + poi + "." + name + ".x");
-        double y = config.getDouble("locations." + poi + "." + name + ".y");
-        double z = config.getDouble("locations." + poi + "." + name + ".z");
-        float yaw = (float) config.getDouble("locations." + poi + "." + name + ".yaw");
-        float pitch = (float) config.getDouble("locations." + poi + "." + name + ".pitch");
+        // Create items with new Component-based display names
+        ItemStack depositItem = new ItemStack(Material.CHEST);
+        ItemMeta meta = depositItem.getItemMeta();
+        if (meta != null) {
+            meta.itemName(Component.text(getConf("UI.depositItem")));
+            depositItem.setItemMeta(meta);
+        }
 
-        if (world == null) return null;
-        return new Location(world, x, y, z, yaw, pitch);
+        ItemStack withdrawItem = new ItemStack(Material.DROPPER);
+        ItemMeta meta2 = withdrawItem.getItemMeta();
+        if (meta2 != null) {
+            meta2.itemName(Component.text(getConf("UI.withdrawItem")));
+            withdrawItem.setItemMeta(meta2);
+        }
+
+        ItemStack infoItem = new ItemStack(Material.GOLD_INGOT);
+        ItemMeta meta3 = infoItem.getItemMeta();
+        if (meta3 != null) {
+            meta3.itemName(Component.text(getConf("UI.infoItem")));
+            List<Component> lore = new ArrayList<>();
+            for(String line: getConfList("UI.infoItemLore")){
+                lore.add(Component.text(line
+                        .replace("{player}", player.getName())
+                        .replace("{balance}", String.valueOf(1000))
+                        .replace("{interest}", String.valueOf(0.5))
+                        .replace("{interestAmount}", String.valueOf(0.05 * 1000))
+                        .replace("{nextInterestDate}", "la pulivara")));
+            }
+            meta3.lore(lore);
+            infoItem.setItemMeta(meta3);
+        }
+
+        // Fill the inventory with black stained glass panes
+        fillInventoryWithGlass(inv);
+
+        // Place items in GUI
+        inv.setItem(11, depositItem);
+        inv.setItem(13, infoItem);
+        inv.setItem(15, withdrawItem);
+
+        // Open the GUI for the player
+        player.openInventory(inv);
     }
+
+    @EventHandler
+    public void onInventoryClick(InventoryClickEvent event) {
+        Inventory inv = event.getInventory();
+        Player player = (Player) event.getWhoClicked();
+
+        // Check if the clicked inventory is your banker inventory
+        if (event.getView().title().equals(Component.text(getConf("UI.bankerTitle")))) {
+            event.setCancelled(true);  // Prevent taking items or moving items within the inventory
+        }
+    }
+
 
     @Override
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
@@ -139,7 +160,6 @@ public final class BankWare extends JavaPlugin implements Listener, CommandExecu
                 if (args.length == 1 && (args[0].equalsIgnoreCase("reload") || args[0].equalsIgnoreCase("rl"))) {
                     reloadConfig();
                     config = getConfig();
-                    loadPOIs();
 
                     player.sendMessage(getConf("messages.prefix") + "§2Config reloaded.");
                     return true;
@@ -148,7 +168,7 @@ public final class BankWare extends JavaPlugin implements Listener, CommandExecu
 
             else if(cmd.getName().equalsIgnoreCase("createbanker")) {
                 if (args.length == 2) {
-                    createNPCWithSkin(player.getLocation(), args[0], args[1]);
+                    createBanker(player.getLocation(), args[0], args[1]);
                     player.sendMessage(getConf("messages.prefix") + "§2Banker created.");
                 } else {
                     player.sendMessage(getConf("messages.prefix") + "§4Usage: /createbanker <name> <skin>");
@@ -157,15 +177,11 @@ public final class BankWare extends JavaPlugin implements Listener, CommandExecu
 
             else if (cmd.getName().equalsIgnoreCase("deletebanker")) {
                 if (args.length == 1) {
-                    if(deleteNPC(args[0])) player.sendMessage(getConf("messages.prefix") + "§2Banker deleted.");
+                    if(deleteBanker(args[0])) player.sendMessage(getConf("messages.prefix") + "§2Banker deleted.");
                     else player.sendMessage(getConf("messages.prefix") + "§4Banker not found.");
                 } else {
                     player.sendMessage(getConf("messages.prefix") + "§4Usage: /deletebanker <name>");
                 }
-            }
-
-            else if(cmd.getName().equalsIgnoreCase("crash")){
-                debug(args[33]);
             }
         }
         return true;
@@ -187,8 +203,8 @@ public final class BankWare extends JavaPlugin implements Listener, CommandExecu
 
         else if (cmd.getName().equalsIgnoreCase("deletebanker")) {
             List<String> list = new ArrayList<>();
-            for(NPC npc : spawnedNPCs) {
-                list.add(npc.getName());
+            for(NPC npc: CitizensAPI.getNPCRegistry()){
+                if(npc.data().get("isBanker") != null) list.add(npc.getName());
             }
 
             return list;
@@ -199,6 +215,24 @@ public final class BankWare extends JavaPlugin implements Listener, CommandExecu
 
 
     // ----------------- UTILS -----------------
+
+    // Method to fill inventory with black stained glass panes
+    private void fillInventoryWithGlass(Inventory inventory) {
+        // Create a black stained glass pane ItemStack
+        ItemStack blackGlass = new ItemStack(Material.BLACK_STAINED_GLASS_PANE, 1); // 1 pane at a time
+
+        // Optionally, you can set a custom name or other properties for the glass panes
+        ItemMeta meta = blackGlass.getItemMeta();
+        if (meta != null) {
+            meta.itemName(Component.text("")); // Optional: Set a display name (you can leave it empty)
+            blackGlass.setItemMeta(meta);
+        }
+
+        // Fill the entire inventory with black stained glass panes
+        for (int i = 0; i < inventory.getSize(); i++) {
+            inventory.setItem(i, blackGlass); // Set the item at the current slot
+        }
+    }
 
     public String translateColor(String message){
         return message.replaceAll("&", "§").replaceAll("§§", "&");
@@ -226,13 +260,5 @@ public final class BankWare extends JavaPlugin implements Listener, CommandExecu
     @Override
     public void onDisable() {
         System.out.println("BankWare plugin disabled");
-        for(NPC npc: spawnedNPCs){
-            npc.destroy();
-        }
-        for (NPC npc : CitizensAPI.getNPCRegistry()) {
-            if (npc.data().get("destroy")) {
-                npc.destroy(); // Destroy only non-persistent NPCs
-            }
-        }
     }
 }
