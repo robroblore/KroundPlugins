@@ -6,7 +6,7 @@ prefix: LoreWare
 load: STARTUP
 authors: [ robroblore ]
 description: Bank with interest and a vault
-depend: [Citizens]
+depend: [Citizens, Vault]
 
 commands:
   bankware:
@@ -21,8 +21,8 @@ commands:
       description: Delete a banker
       permission: bankware.createdeletePOI
 
-  crash:
-      description: Crash the server
+  lamultiani:
+      description: La multi ani denis <3
       permission: op
 
 permissions:

@@ -100,7 +100,7 @@ public class DiscordListener extends ListenerAdapter {
                 event.reply(diskround.getConf("discord.close.message")
                         .replace("{staff}", event.getMember().getEffectiveName())
                         .replace("{platform}", "discord")).setEphemeral(false).queue(response -> {
-                    event.getChannel().asThreadChannel().getManager().setArchived(true).queue();
+                    event.getChannel().asThreadChannel().getManager().setName(event.getChannel().getName() + " (closed)").setArchived(true).setLocked(true).queue();
                 });
                 break;
 

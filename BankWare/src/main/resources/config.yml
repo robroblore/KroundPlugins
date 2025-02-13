@@ -11,14 +11,34 @@
 messages:
   prefix: "&l&dBankWare ▶ &r"
   bankerInteract: "&2Buna, ma numesc {name}, cu ce te pot ajuta?"
+  depositSuccess: "&2Ai depozitat &6${amount}&2 in contul tau. Sold curent: &6${balance}"
+  depositFail: "&4Nu ai destui bani pentru a depozita suma de &6${amount}."
+  withdrawSuccess: "&2Ai retras &6${amount}&2 din contul tau. Sold curent: &6${balance}"
+  withdrawFail: "&4Nu ai destui bani pentru a retrage suma de &6${amount}."
 
 UI:
   bankerTitle: "&2Banca"
   depositItem: "&2Depoziteaza"
   withdrawItem: "&2Retrage"
   infoItem: "&2Informatii"
-  infoItemLore:
-    - "Sold curent: &2{balance}"
+  infoItemLore: # Informatiile pot fi schimbate in orice ordine, ai access la urmatoarele variabile: {player}, {balance}, {interest}, {interestAmount}, {nextInterestHours}, {nextInterestMinutes}
+    - "Sold curent: &2${balance}"
     - "Dobanda: &2{interest}%"
-    - "Suma dobanzii: &2{interestAmount}"
-    - "Data urmatoarei dobanzi: &2{nextInterestDate}"
+    - "Suma dobanzii: &2${interestAmount}"
+    - "Urmatoarea dobanda in &2{nextInterestHours} ore si {nextInterestMinutes} minute"
+
+  depositTitle: "&2Depozit"
+  confirmDepositItem: "&2Depoziteaza ${amount}"
+  cancelDepositItem: "&4Anuleaza depozitarea"
+  setAmountDepositItem: "&2Seteaza suma de depozitat"
+
+  withdrawTitle: "&2Retragere"
+  confirmWithdrawItem: "&2Retrage ${amount}"
+  cancelWithdrawItem: "&4Anuleaza retragerea"
+  setAmountWithdrawItem: "&2Seteaza suma de retras"
+
+
+
+interest:
+  percentage: 0.5
+  lastInterest: 0

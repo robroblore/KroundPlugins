@@ -274,7 +274,7 @@ public final class DisKroundWare extends JavaPlugin implements Listener, Command
                         thread.sendMessage(getConf("discord.close.message")
                                 .replace("{staff}", player.getName())
                                 .replace("{platform}", "minecraft")).queue(response -> {
-                            thread.getManager().setArchived(true).queue();
+                            thread.getManager().setName(thread.getName() + " (closed)").setArchived(true).setLocked(true).queue();
                         });
                         threadExists = true;
                         break;
