@@ -27,15 +27,31 @@ UI:
     - "Suma dobanzii: &2${interestAmount}"
     - "Urmatoarea dobanda in &2{nextInterestHours} ore si {nextInterestMinutes} minute"
 
-  depositTitle: "&2Depozit"
-  confirmDepositItem: "&2Depoziteaza ${amount}"
-  cancelDepositItem: "&4Anuleaza depozitarea"
-  setAmountDepositItem: "&2Seteaza suma de depozitat"
+  deposit:
+    depositTitle: "&2Depozit"
+    confirmDepositItem: "&2Depoziteaza ${amount}"
+    inputAmountFirstItem: "&eIntrodu suma de depozitat mai intai"
+    cancelDepositItem: "&4Anuleaza depozitarea"
+    setAmountDepositItem: "&2Seteaza suma de depozitat"
+    invalidAmountDepositItem: "&4Suma introdusa este invalida"
+    depositSignLines:
+        # Line one gets the player's input
+        line2: "^^^^^^^^^^^^^^^" # MAX 15 characters
+        line3: "Introdu suma" # MAX 15 characters
+        line4: "de depozitat" # MAX 15 characters
 
-  withdrawTitle: "&2Retragere"
-  confirmWithdrawItem: "&2Retrage ${amount}"
-  cancelWithdrawItem: "&4Anuleaza retragerea"
-  setAmountWithdrawItem: "&2Seteaza suma de retras"
+  withdraw:
+    withdrawTitle: "&2Retragere"
+    confirmWithdrawItem: "&2Retrage ${amount}"
+    inputAmountFirstItem: "&eIntrodu suma de retras mai intai"
+    cancelWithdrawItem: "&4Anuleaza retragerea"
+    setAmountWithdrawItem: "&2Seteaza suma de retras"
+    invalidAmountWithdrawItem: "&4Suma introdusa este invalida"
+    withdrawSignLines:
+      # Line one gets the player's input
+      line2: "^^^^^^^^^^^^^^^" # MAX 15 characters
+      line3: "Introdu suma" # MAX 15 characters
+      line4: "de retras" # MAX 15 characters
 
 
 

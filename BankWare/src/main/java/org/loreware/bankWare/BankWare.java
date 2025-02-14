@@ -9,6 +9,7 @@ import net.citizensnpcs.api.npc.NPC;
 import net.citizensnpcs.api.npc.NPCRegistry;
 import net.citizensnpcs.trait.SkinTrait;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import net.milkbowl.vault.economy.Economy;
 import org.bukkit.Bukkit;
 import org.bukkit.DyeColor;
@@ -67,6 +68,7 @@ public final class BankWare extends JavaPlugin implements Listener, CommandExecu
     }
 
     public double getBankBalance(Player player) {
+        accounts = getAccountsConfig();
         UUID uuid = player.getUniqueId();
         if(!accounts.isConfigurationSection(uuid.toString())){
             accounts.createSection(uuid.toString());
@@ -77,7 +79,10 @@ public final class BankWare extends JavaPlugin implements Listener, CommandExecu
         accounts.set(uuid.toString() + ".lastName" , player.getName());
         saveAccountsConfig();
 
-        return accounts.getDouble(uuid.toString() + ".balance");
+        double amount = accounts.getDouble(uuid.toString() + ".balance");
+        amount = Math.round(amount*100.0)/100.0; // Round to 2 digits after the .
+
+        return amount;
     }
 
     public void depositToBank(Player player, double amount) {
@@ -162,13 +167,15 @@ public final class BankWare extends JavaPlugin implements Listener, CommandExecu
             List<Component> lore = new ArrayList<>();
             double bal = getBankBalance(player);
             double interestPerc = config.getDouble("interest.percentage");
+            double interestAmount = bal * (interestPerc / 100);
+            interestAmount = Math.round(interestAmount*100.0)/100.0; // Round to 2 digits after the .
             List<Integer> timeLeftTillMidnight = getTimeLeftUntilMidnight();
             for(String line: getConfList("UI.infoItemLore")){
                 lore.add(Component.text(line
                         .replace("{player}", player.getName())
                         .replace("{balance}", String.valueOf(bal))
                         .replace("{interest}", String.valueOf(interestPerc))
-                        .replace("{interestAmount}", String.valueOf(bal * (interestPerc / 100)))
+                        .replace("{interestAmount}", String.valueOf(interestAmount))
                         .replace("{nextInterestHours}", timeLeftTillMidnight.getFirst().toString())
                         .replace("{nextInterestMinutes}", timeLeftTillMidnight.get(1).toString())));
             }
@@ -188,29 +195,29 @@ public final class BankWare extends JavaPlugin implements Listener, CommandExecu
         player.openInventory(inv);
     }
 
-    public void openDepositMenu(Player player) {
+    public void openDepositMenu(Player player, double amount) {
         // Use the new method to create the inventory with a title as Component
-        Inventory inv = Bukkit.createInventory(null, 27, Component.text(getConf("UI.depositTitle")));
+        Inventory inv = Bukkit.createInventory(null, 27, Component.text(getConf("UI.deposit.depositTitle")));
 
         // Create items with new Component-based display names
         ItemStack confirmDepositItem = new ItemStack(Material.GREEN_DYE);
         ItemMeta meta = confirmDepositItem.getItemMeta();
         if (meta != null) {
-            meta.itemName(Component.text(getConf("UI.confirmDepositItem")));
+            meta.itemName(Component.text(getConf("UI.deposit.confirmDepositItem").replace("{amount}", String.valueOf(amount))));
             confirmDepositItem.setItemMeta(meta);
         }
 
         ItemStack cancelDepositItem = new ItemStack(Material.RED_DYE);
         ItemMeta meta2 = cancelDepositItem.getItemMeta();
         if (meta2 != null) {
-            meta2.itemName(Component.text(getConf("UI.cancelDepositItem")));
+            meta2.itemName(Component.text(getConf("UI.deposit.cancelDepositItem")));
             cancelDepositItem.setItemMeta(meta2);
         }
 
         ItemStack setAmountDepositItem = new ItemStack(Material.PAPER);
         ItemMeta meta3 = setAmountDepositItem.getItemMeta();
         if (meta3 != null) {
-            meta3.itemName(Component.text(getConf("UI.setAmountDepositItem")));
+            meta3.itemName(Component.text(getConf("UI.deposit.setAmountDepositItem")));
             setAmountDepositItem.setItemMeta(meta3);
         }
 
@@ -221,13 +228,15 @@ public final class BankWare extends JavaPlugin implements Listener, CommandExecu
             List<Component> lore = new ArrayList<>();
             double bal = getBankBalance(player);
             double interestPerc = config.getDouble("interest.percentage");
+            double interestAmount = bal * (interestPerc / 100);
+            interestAmount = Math.round(interestAmount*100.0)/100.0; // Round to 2 digits after the .
             List<Integer> timeLeftTillMidnight = getTimeLeftUntilMidnight();
             for(String line: getConfList("UI.infoItemLore")){
                 lore.add(Component.text(line
                         .replace("{player}", player.getName())
                         .replace("{balance}", String.valueOf(bal))
                         .replace("{interest}", String.valueOf(interestPerc))
-                        .replace("{interestAmount}", String.valueOf(bal * (interestPerc / 100)))
+                        .replace("{interestAmount}", String.valueOf(interestAmount))
                         .replace("{nextInterestHours}", timeLeftTillMidnight.getFirst().toString())
                         .replace("{nextInterestMinutes}", timeLeftTillMidnight.get(1).toString())));
             }
@@ -235,42 +244,61 @@ public final class BankWare extends JavaPlugin implements Listener, CommandExecu
             infoItem.setItemMeta(meta4);
         }
 
+        ItemStack invalidAmountDepositItem = new ItemStack(Material.REDSTONE_BLOCK);
+        ItemMeta meta5 = invalidAmountDepositItem.getItemMeta();
+        if (meta5 != null) {
+            meta5.itemName(Component.text(getConf("UI.deposit.invalidAmountDepositItem")));
+            invalidAmountDepositItem.setItemMeta(meta5);
+        }
+
+        ItemStack inputAmountFirstItem = new ItemStack(Material.YELLOW_DYE);
+        ItemMeta meta6 = inputAmountFirstItem.getItemMeta();
+        if (meta6 != null) {
+            meta6.itemName(Component.text(getConf("UI.deposit.inputAmountFirstItem")));
+            inputAmountFirstItem.setItemMeta(meta6);
+        }
+
         // Fill the inventory with black stained glass panes
         fillInventoryWithGlass(inv);
 
         // Place items in GUI
-        inv.setItem(11, confirmDepositItem);
-        inv.setItem(13, setAmountDepositItem);
+        if(amount <= 0) inv.setItem(11, inputAmountFirstItem);
+        else inv.setItem(11, confirmDepositItem);
+
+        if(amount < 0) inv.setItem(13, invalidAmountDepositItem);
+        else inv.setItem(13, setAmountDepositItem);
+
         inv.setItem(15, cancelDepositItem);
+
         inv.setItem(22, infoItem);
 
         // Open the GUI for the player
         player.openInventory(inv);
     }
 
-    public void openWithdrawMenu(Player player) {
+    public void openWithdrawMenu(Player player, double amount) {
         // Use the new method to create the inventory with a title as Component
-        Inventory inv = Bukkit.createInventory(null, 27, Component.text(getConf("UI.withdrawTitle")));
+        Inventory inv = Bukkit.createInventory(null, 27, Component.text(getConf("UI.withdraw.withdrawTitle")));
 
         // Create items with new Component-based display names
         ItemStack confirmWithdrawItem = new ItemStack(Material.GREEN_DYE);
         ItemMeta meta = confirmWithdrawItem.getItemMeta();
         if (meta != null) {
-            meta.itemName(Component.text(getConf("UI.confirmWithdrawItem")));
+            meta.itemName(Component.text(getConf("UI.withdraw.confirmWithdrawItem").replace("{amount}", String.valueOf(amount))));
             confirmWithdrawItem.setItemMeta(meta);
         }
 
         ItemStack cancelWithdrawItem = new ItemStack(Material.RED_DYE);
         ItemMeta meta2 = cancelWithdrawItem.getItemMeta();
         if (meta2 != null) {
-            meta2.itemName(Component.text(getConf("UI.cancelWithdrawItem")));
+            meta2.itemName(Component.text(getConf("UI.withdraw.cancelWithdrawItem")));
             cancelWithdrawItem.setItemMeta(meta2);
         }
 
         ItemStack setAmountWithdrawItem = new ItemStack(Material.PAPER);
         ItemMeta meta3 = setAmountWithdrawItem.getItemMeta();
         if (meta3 != null) {
-            meta3.itemName(Component.text(getConf("UI.setAmountWithdrawItem")));
+            meta3.itemName(Component.text(getConf("UI.withdraw.setAmountWithdrawItem")));
             setAmountWithdrawItem.setItemMeta(meta3);
         }
 
@@ -281,13 +309,15 @@ public final class BankWare extends JavaPlugin implements Listener, CommandExecu
             List<Component> lore = new ArrayList<>();
             double bal = getBankBalance(player);
             double interestPerc = config.getDouble("interest.percentage");
+            double interestAmount = bal * (interestPerc / 100);
+            interestAmount = Math.round(interestAmount*100.0)/100.0; // Round to 2 digits after the .
             List<Integer> timeLeftTillMidnight = getTimeLeftUntilMidnight();
             for(String line: getConfList("UI.infoItemLore")){
                 lore.add(Component.text(line
                         .replace("{player}", player.getName())
                         .replace("{balance}", String.valueOf(bal))
                         .replace("{interest}", String.valueOf(interestPerc))
-                        .replace("{interestAmount}", String.valueOf(bal * (interestPerc / 100)))
+                        .replace("{interestAmount}", String.valueOf(interestAmount))
                         .replace("{nextInterestHours}", timeLeftTillMidnight.getFirst().toString())
                         .replace("{nextInterestMinutes}", timeLeftTillMidnight.get(1).toString())));
             }
@@ -295,12 +325,31 @@ public final class BankWare extends JavaPlugin implements Listener, CommandExecu
             infoItem.setItemMeta(meta4);
         }
 
+        ItemStack invalidAmountWithdrawItem = new ItemStack(Material.REDSTONE_BLOCK);
+        ItemMeta meta5 = invalidAmountWithdrawItem.getItemMeta();
+        if (meta5 != null) {
+            meta5.itemName(Component.text(getConf("UI.withdraw.invalidAmountWithdrawItem")));
+            invalidAmountWithdrawItem.setItemMeta(meta5);
+        }
+
+        ItemStack inputAmountFirstItem = new ItemStack(Material.YELLOW_DYE);
+        ItemMeta meta6 = inputAmountFirstItem.getItemMeta();
+        if (meta6 != null) {
+            meta6.itemName(Component.text(getConf("UI.withdraw.inputAmountFirstItem")));
+            inputAmountFirstItem.setItemMeta(meta6);
+        }
+
         // Fill the inventory with black stained glass panes
         fillInventoryWithGlass(inv);
 
         // Place items in GUI
-        inv.setItem(11, confirmWithdrawItem);
-        inv.setItem(13, setAmountWithdrawItem);
+
+        if(amount <= 0) inv.setItem(11, inputAmountFirstItem);
+        else inv.setItem(11, confirmWithdrawItem);
+
+        if(amount < 0) inv.setItem(13, invalidAmountWithdrawItem);
+        else inv.setItem(13, setAmountWithdrawItem);
+
         inv.setItem(15, cancelWithdrawItem);
         inv.setItem(22, infoItem);
 
@@ -324,13 +373,13 @@ public final class BankWare extends JavaPlugin implements Listener, CommandExecu
 
             // Check which item was clicked
             if (clickedItem.getType() == Material.CHEST) {
-                openDepositMenu(player);
+                openDepositMenu(player, 0);
             } else if (clickedItem.getType() == Material.DROPPER) {
-                openWithdrawMenu(player);
+                openWithdrawMenu(player, 0);
             }
         }
 
-        else if (event.getView().title().equals(Component.text(getConf("UI.depositTitle")))){
+        else if (event.getView().title().equals(Component.text(getConf("UI.deposit.depositTitle")))){
             event.setCancelled(true);
 
             if (event.getClickedInventory() == null || event.getClickedInventory().getType() == InventoryType.PLAYER) return;
@@ -339,54 +388,50 @@ public final class BankWare extends JavaPlugin implements Listener, CommandExecu
             if (clickedItem == null || clickedItem.getType() == Material.AIR) return;
 
             if (clickedItem.getType() == Material.GREEN_DYE) {
-                return;
+                String name = PlainTextComponentSerializer.plainText().serialize(clickedItem.getItemMeta().itemName());
+                String sAmount = name.split("\\$")[1];
+                double amount = Double.parseDouble(sAmount);
+                depositToBank(player, amount);
             } else if (clickedItem.getType() == Material.RED_DYE) {
                 openBankerGUI(player);
-            } else if (clickedItem.getType() == Material.PAPER) {
+            } else if (clickedItem.getType() == Material.PAPER || clickedItem.getType() == Material.REDSTONE_BLOCK) {
                 try {
                     SignGUI gui = SignGUI.builder()
                             // set lines
-                            .setLines("§6Line 1", null, "§6Line 3")
-
-                            // set specific line, starting index is 0
-                            .setLine(3, "Line 4")
+                            .setLines(
+                                    null,
+                                    getConf("UI.deposit.depositSignLines.line2"),
+                                    getConf("UI.deposit.depositSignLines.line3"),
+                                    getConf("UI.deposit.depositSignLines.line4")
+                            )
 
                             // set the sign type
                             .setType(Material.DARK_OAK_SIGN)
 
                             // set the sign color
-                            .setColor(DyeColor.YELLOW)
+                            .setColor(DyeColor.BLACK)
 
                             // set the handler/listener (called when the player finishes editing)
                             .setHandler((p, result) -> {
-                                // get a speficic line, starting index is 0
                                 String line0 = result.getLine(0);
 
-                                // get a specific line without color codes
-                                String line1 = result.getLineWithoutColor(1);
+                                double amount;
 
-                                // get all lines
-                                String[] lines = result.getLines();
-
-                                // get all lines without color codes
-                                String[] linesWithoutColor = result.getLinesWithoutColor();
-
-                                if (line1.isEmpty()) {
-                                    // The user has not entered anything on line 2, so we open the sign again
-                                    return List.of(SignGUIAction.displayNewLines("§6Line 1", null, "§6Line 3", "Line 4"));
+                                try {
+                                    amount = Double.parseDouble(line0);
+                                } catch (Exception e) {
+                                    amount = -1;
                                 }
 
-                                if (line1.equals("inv")) {
-                                    // close the sign and open an inventory
-                                    return List.of(
-                                            // "this" = your JavaPlugin instance
-                                            SignGUIAction.openInventory(this, Bukkit.createInventory(player, 27)),
-                                            SignGUIAction.run(() -> player.sendMessage("Inventory opened!"))
-                                    );
-                                }
+                                if (amount <= 0) amount = -1;
 
-                                // Just close the sign by not returning any actions
-                                return Collections.emptyList();
+                                double finalAmount = Math.round(amount*100.0)/100.0; // Round to 2 digits after the .
+                                return List.of(
+                                        SignGUIAction.run(() -> {
+                                            // Run on the main thread
+                                            Bukkit.getScheduler().runTask(this, () -> openDepositMenu(p, finalAmount));
+                                        })
+                                );
                             })
 
                             // build the SignGUI
@@ -397,11 +442,10 @@ public final class BankWare extends JavaPlugin implements Listener, CommandExecu
                 } catch (SignGUIVersionException e) {
                     // This error is thrown if SignGUI does not support this server version (yet).
                 }
-                return;
             }
         }
 
-        else if (event.getView().title().equals(Component.text(getConf("UI.withdrawTitle")))){
+        else if (event.getView().title().equals(Component.text(getConf("UI.withdraw.withdrawTitle")))){
             event.setCancelled(true);
 
             if (event.getClickedInventory() == null || event.getClickedInventory().getType() == InventoryType.PLAYER) return;
@@ -410,11 +454,60 @@ public final class BankWare extends JavaPlugin implements Listener, CommandExecu
             if (clickedItem == null || clickedItem.getType() == Material.AIR) return;
 
             if (clickedItem.getType() == Material.GREEN_DYE) {
-                return;
+                String name = PlainTextComponentSerializer.plainText().serialize(clickedItem.getItemMeta().itemName());
+                String sAmount = name.split("\\$")[1];
+                double amount = Double.parseDouble(sAmount);
+                withdrawFromBank(player, amount);
             } else if (clickedItem.getType() == Material.RED_DYE) {
                 openBankerGUI(player);
-            } else if (clickedItem.getType() == Material.PAPER) {
-                return;
+            } else if (clickedItem.getType() == Material.PAPER || clickedItem.getType() == Material.REDSTONE_BLOCK) {
+                try {
+                    SignGUI gui = SignGUI.builder()
+                            // set lines
+                            .setLines(
+                                    null,
+                                    getConf("UI.withdraw.withdrawSignLines.line2"),
+                                    getConf("UI.withdraw.withdrawSignLines.line3"),
+                                    getConf("UI.withdraw.withdrawSignLines.line4")
+                            )
+
+                            // set the sign type
+                            .setType(Material.DARK_OAK_SIGN)
+
+                            // set the sign color
+                            .setColor(DyeColor.BLACK)
+
+                            // set the handler/listener (called when the player finishes editing)
+                            .setHandler((p, result) -> {
+                                String line0 = result.getLine(0);
+
+                                double amount;
+
+                                try {
+                                    amount = Double.parseDouble(line0);
+                                } catch (Exception e) {
+                                    amount = -1;
+                                }
+
+                                if (amount <= 0) amount = -1;
+
+                                double finalAmount = Math.round(amount*100.0)/100.0; // Round to 2 digits after the .
+                                return List.of(
+                                        SignGUIAction.run(() -> {
+                                            // Run on the main thread
+                                            Bukkit.getScheduler().runTask(this, () -> openWithdrawMenu(p, finalAmount));
+                                        })
+                                );
+                            })
+
+                            // build the SignGUI
+                            .build();
+
+                    // open the sign
+                    gui.open(player);
+                } catch (SignGUIVersionException e) {
+                    // This error is thrown if SignGUI does not support this server version (yet).
+                }
             }
         }
     }
