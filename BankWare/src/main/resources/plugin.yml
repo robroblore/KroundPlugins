@@ -6,7 +6,7 @@ prefix: LoreWare
 load: STARTUP
 authors: [ robroblore ]
 description: Bank with interest and a vault
-depend: [Citizens, Vault]
+depend: [Citizens, Vault] # , ProtocolLib
 
 commands:
   bankware:
@@ -21,9 +21,9 @@ commands:
       description: Delete a banker
       permission: bankware.createdeletePOI
 
-  lamultiani:
-      description: La multi ani denis <3
-      permission: op
+  bank:
+    description: Open the bank anywhere
+    permission: bankware.bankcommand
 
 permissions:
   bankware.canReload:
@@ -33,3 +33,47 @@ permissions:
   bankware.createdeletePOI:
     description: Can create a point of interest (banker or vault)
     default: op
+
+  bankware.bankcommand:
+    description: Can use the bank command
+    default: op
+
+  bankware.interest.tier1:
+    description: Tiers of interest you can receive
+    default: true
+
+  bankware.interest.tier2:
+    description: Tiers of interest you can receive
+    default: false
+
+  bankware.interest.tier3:
+    description: Tiers of interest you can receive
+    default: false
+
+  bankware.interest.tier4:
+    description: Tiers of interest you can receive
+    default: false
+
+  bankware.interest.tier5:
+    description: Tiers of interest you can receive
+    default: false
+
+  bankware.interest.tier6:
+    description: Tiers of interest you can receive
+    default: false
+
+  bankware.interest.tier7:
+    description: Tiers of interest you can receive
+    default: false
+
+  bankware.interest.tier8:
+    description: Tiers of interest you can receive
+    default: false
+
+  bankware.interest.tier9:
+    description: Tiers of interest you can receive
+    default: false
+
+  bankware.interest.tier10:
+    description: Tiers of interest you can receive
+    default: false

@@ -11,10 +11,7 @@ import net.citizensnpcs.trait.SkinTrait;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import net.milkbowl.vault.economy.Economy;
-import org.bukkit.Bukkit;
-import org.bukkit.DyeColor;
-import org.bukkit.Location;
-import org.bukkit.Material;
+import org.bukkit.*;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -35,11 +32,8 @@ import org.bukkit.plugin.java.JavaPlugin;
 import java.io.File;
 import java.io.IOException;
 import java.time.Duration;
-import java.time.LocalTime;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.UUID;
+import java.time.LocalDateTime;
+import java.util.*;
 
 public final class BankWare extends JavaPlugin implements Listener, CommandExecutor {
 
@@ -50,14 +44,13 @@ public final class BankWare extends JavaPlugin implements Listener, CommandExecu
     @Override
     public void onEnable() {
         System.out.println("BankWare plugin enabled");
-
-        saveResource("config.yml", /* replace */ true);
-        config = getConfig();
-
-//        saveDefaultConfig();
+//        saveResource("config.yml", /* replace */ true);
 //        config = getConfig();
-//        config.options().copyDefaults(true);
-//        saveConfig();
+        saveDefaultConfig();
+        config = getConfig();
+        config.options().copyDefaults(true);
+        saveConfig();
+        config = getConfig();
 
         accounts = getAccountsConfig();
 
@@ -80,14 +73,15 @@ public final class BankWare extends JavaPlugin implements Listener, CommandExecu
         saveAccountsConfig();
 
         double amount = accounts.getDouble(uuid.toString() + ".balance");
-        amount = Math.round(amount*100.0)/100.0; // Round to 2 digits after the .
+        amount = round(amount);
 
         return amount;
     }
 
     public void depositToBank(Player player, double amount) {
         if(econ.getBalance(player) < amount){
-            player.sendMessage(getConf("messages.prefix") + getConf("messages.depositFail"));
+            player.sendMessage(getConf("messages.prefix") + getConf("messages.depositFail")
+                    .replace("{amount}", String.valueOf(amount)));
             return;
         }
         UUID uuid = player.getUniqueId();
@@ -99,13 +93,16 @@ public final class BankWare extends JavaPlugin implements Listener, CommandExecu
         player.sendMessage(getConf("messages.prefix") + getConf("messages.depositSuccess")
                 .replace("{amount}", String.valueOf(amount))
                 .replace("{balance}", String.valueOf(balance)));
+        setNextInterest(player, true);
+        player.playSound(player, Sound.UI_CARTOGRAPHY_TABLE_TAKE_RESULT, 1, 1);
     }
 
     public void withdrawFromBank(Player player, double amount) {
         UUID uuid = player.getUniqueId();
         double balance = getBankBalance(player);
         if(balance < amount){
-            player.sendMessage(getConf("messages.prefix") + getConf("messages.withdrawFail"));
+            player.sendMessage(getConf("messages.prefix") + getConf("messages.withdrawFail")
+                    .replace("{amount}", String.valueOf(amount)));
             return;
         }
         balance -= amount;
@@ -115,20 +112,14 @@ public final class BankWare extends JavaPlugin implements Listener, CommandExecu
         player.sendMessage(getConf("messages.prefix") + getConf("messages.withdrawSuccess")
                 .replace("{amount}", String.valueOf(amount))
                 .replace("{balance}", String.valueOf(balance)));
+        setNextInterest(player, true);
+        player.playSound(player, Sound.UI_CARTOGRAPHY_TABLE_TAKE_RESULT, 1, 1);
     }
 
 
     @EventHandler
     public void onNpcClick(NPCRightClickEvent event) {
         NPC npc = event.getNPC();
-
-        if(npc.data().get("isPartier") != null){
-            Player player = event.getClicker();
-
-            player.sendMessage(translateColor("§7{name} §8► §r&d&kA&r &2La multi ani Denis!!! &r&d&kA".replace("{name}", npc.getName())));
-            return;
-        }
-
 
         if (npc.data().get("isBanker") == null) {
             return;
@@ -142,6 +133,7 @@ public final class BankWare extends JavaPlugin implements Listener, CommandExecu
     }
 
     public void openBankerGUI(Player player) {
+        calculateAccumulatedInterest(player);
         // Use the new method to create the inventory with a title as Component
         Inventory inv = Bukkit.createInventory(null, 27, Component.text(getConf("UI.bankerTitle")));
 
@@ -160,28 +152,7 @@ public final class BankWare extends JavaPlugin implements Listener, CommandExecu
             withdrawItem.setItemMeta(meta2);
         }
 
-        ItemStack infoItem = new ItemStack(Material.GOLD_INGOT);
-        ItemMeta meta3 = infoItem.getItemMeta();
-        if (meta3 != null) {
-            meta3.itemName(Component.text(getConf("UI.infoItem")));
-            List<Component> lore = new ArrayList<>();
-            double bal = getBankBalance(player);
-            double interestPerc = config.getDouble("interest.percentage");
-            double interestAmount = bal * (interestPerc / 100);
-            interestAmount = Math.round(interestAmount*100.0)/100.0; // Round to 2 digits after the .
-            List<Integer> timeLeftTillMidnight = getTimeLeftUntilMidnight();
-            for(String line: getConfList("UI.infoItemLore")){
-                lore.add(Component.text(line
-                        .replace("{player}", player.getName())
-                        .replace("{balance}", String.valueOf(bal))
-                        .replace("{interest}", String.valueOf(interestPerc))
-                        .replace("{interestAmount}", String.valueOf(interestAmount))
-                        .replace("{nextInterestHours}", timeLeftTillMidnight.getFirst().toString())
-                        .replace("{nextInterestMinutes}", timeLeftTillMidnight.get(1).toString())));
-            }
-            meta3.lore(lore);
-            infoItem.setItemMeta(meta3);
-        }
+        ItemStack infoItem = getInfoItem(player);
 
         // Fill the inventory with black stained glass panes
         fillInventoryWithGlass(inv);
@@ -221,28 +192,7 @@ public final class BankWare extends JavaPlugin implements Listener, CommandExecu
             setAmountDepositItem.setItemMeta(meta3);
         }
 
-        ItemStack infoItem = new ItemStack(Material.GOLD_INGOT);
-        ItemMeta meta4 = infoItem.getItemMeta();
-        if (meta4 != null) {
-            meta4.itemName(Component.text(getConf("UI.infoItem")));
-            List<Component> lore = new ArrayList<>();
-            double bal = getBankBalance(player);
-            double interestPerc = config.getDouble("interest.percentage");
-            double interestAmount = bal * (interestPerc / 100);
-            interestAmount = Math.round(interestAmount*100.0)/100.0; // Round to 2 digits after the .
-            List<Integer> timeLeftTillMidnight = getTimeLeftUntilMidnight();
-            for(String line: getConfList("UI.infoItemLore")){
-                lore.add(Component.text(line
-                        .replace("{player}", player.getName())
-                        .replace("{balance}", String.valueOf(bal))
-                        .replace("{interest}", String.valueOf(interestPerc))
-                        .replace("{interestAmount}", String.valueOf(interestAmount))
-                        .replace("{nextInterestHours}", timeLeftTillMidnight.getFirst().toString())
-                        .replace("{nextInterestMinutes}", timeLeftTillMidnight.get(1).toString())));
-            }
-            meta4.lore(lore);
-            infoItem.setItemMeta(meta4);
-        }
+        ItemStack infoItem = getInfoItem(player);
 
         ItemStack invalidAmountDepositItem = new ItemStack(Material.REDSTONE_BLOCK);
         ItemMeta meta5 = invalidAmountDepositItem.getItemMeta();
@@ -302,28 +252,7 @@ public final class BankWare extends JavaPlugin implements Listener, CommandExecu
             setAmountWithdrawItem.setItemMeta(meta3);
         }
 
-        ItemStack infoItem = new ItemStack(Material.GOLD_INGOT);
-        ItemMeta meta4 = infoItem.getItemMeta();
-        if (meta4 != null) {
-            meta4.itemName(Component.text(getConf("UI.infoItem")));
-            List<Component> lore = new ArrayList<>();
-            double bal = getBankBalance(player);
-            double interestPerc = config.getDouble("interest.percentage");
-            double interestAmount = bal * (interestPerc / 100);
-            interestAmount = Math.round(interestAmount*100.0)/100.0; // Round to 2 digits after the .
-            List<Integer> timeLeftTillMidnight = getTimeLeftUntilMidnight();
-            for(String line: getConfList("UI.infoItemLore")){
-                lore.add(Component.text(line
-                        .replace("{player}", player.getName())
-                        .replace("{balance}", String.valueOf(bal))
-                        .replace("{interest}", String.valueOf(interestPerc))
-                        .replace("{interestAmount}", String.valueOf(interestAmount))
-                        .replace("{nextInterestHours}", timeLeftTillMidnight.getFirst().toString())
-                        .replace("{nextInterestMinutes}", timeLeftTillMidnight.get(1).toString())));
-            }
-            meta4.lore(lore);
-            infoItem.setItemMeta(meta4);
-        }
+        ItemStack infoItem = getInfoItem(player);
 
         ItemStack invalidAmountWithdrawItem = new ItemStack(Material.REDSTONE_BLOCK);
         ItemMeta meta5 = invalidAmountWithdrawItem.getItemMeta();
@@ -355,6 +284,33 @@ public final class BankWare extends JavaPlugin implements Listener, CommandExecu
 
         // Open the GUI for the player
         player.openInventory(inv);
+    }
+
+    public ItemStack getInfoItem(Player player){
+        ItemStack infoItem = new ItemStack(Material.GOLD_INGOT);
+        ItemMeta meta4 = infoItem.getItemMeta();
+        if (meta4 != null) {
+            meta4.itemName(Component.text(getConf("UI.infoItem")));
+            List<Component> lore = new ArrayList<>();
+            double bal = getBankBalance(player);
+            double interestPerc = getPlayersInterestPerc(player);
+            double interestAmount = bal * (interestPerc / 100);
+            interestAmount = round(interestAmount); // Round to 2 digits after the .
+
+            for(String line: getConfList("UI.infoItemLore")){
+                lore.add(Component.text(line
+                        .replace("{player}", player.getName())
+                        .replace("{balance}", String.valueOf(bal))
+                        .replace("{interest}", String.valueOf(interestPerc))
+                        .replace("{interestAmount}", String.valueOf(interestAmount))
+                        .replace("{nextInterestHours}", String.valueOf(getTimeLeftTillInterest(player) / 60))
+                        .replace("{nextInterestMinutes}", String.valueOf(getTimeLeftTillInterest(player) % 60))));
+            }
+            meta4.lore(lore);
+            infoItem.setItemMeta(meta4);
+        }
+
+        return infoItem;
     }
 
     @EventHandler
@@ -392,9 +348,11 @@ public final class BankWare extends JavaPlugin implements Listener, CommandExecu
                 String sAmount = name.split("\\$")[1];
                 double amount = Double.parseDouble(sAmount);
                 depositToBank(player, amount);
+                player.closeInventory();
             } else if (clickedItem.getType() == Material.RED_DYE) {
                 openBankerGUI(player);
-            } else if (clickedItem.getType() == Material.PAPER || clickedItem.getType() == Material.REDSTONE_BLOCK) {
+            } else if (clickedItem.getType() == Material.PAPER || clickedItem.getType() == Material.REDSTONE_BLOCK  || clickedItem.getType() == Material.YELLOW_DYE) {
+                player.sendMessage(getConf("messages.prefix") + getConf("messages.idiotProof"));
                 try {
                     SignGUI gui = SignGUI.builder()
                             // set lines
@@ -411,6 +369,8 @@ public final class BankWare extends JavaPlugin implements Listener, CommandExecu
                             // set the sign color
                             .setColor(DyeColor.BLACK)
 
+                            .setLocation(player.getLocation().subtract(0, 5, 0))
+
                             // set the handler/listener (called when the player finishes editing)
                             .setHandler((p, result) -> {
                                 String line0 = result.getLine(0);
@@ -425,7 +385,7 @@ public final class BankWare extends JavaPlugin implements Listener, CommandExecu
 
                                 if (amount <= 0) amount = -1;
 
-                                double finalAmount = Math.round(amount*100.0)/100.0; // Round to 2 digits after the .
+                                double finalAmount = round(amount); // Round to 2 digits after the .
                                 return List.of(
                                         SignGUIAction.run(() -> {
                                             // Run on the main thread
@@ -439,7 +399,8 @@ public final class BankWare extends JavaPlugin implements Listener, CommandExecu
 
                     // open the sign
                     gui.open(player);
-                } catch (SignGUIVersionException e) {
+                } catch (Exception e) {
+                    debug(e.getMessage());
                     // This error is thrown if SignGUI does not support this server version (yet).
                 }
             }
@@ -458,9 +419,11 @@ public final class BankWare extends JavaPlugin implements Listener, CommandExecu
                 String sAmount = name.split("\\$")[1];
                 double amount = Double.parseDouble(sAmount);
                 withdrawFromBank(player, amount);
+                player.closeInventory();
             } else if (clickedItem.getType() == Material.RED_DYE) {
                 openBankerGUI(player);
-            } else if (clickedItem.getType() == Material.PAPER || clickedItem.getType() == Material.REDSTONE_BLOCK) {
+            } else if (clickedItem.getType() == Material.PAPER || clickedItem.getType() == Material.REDSTONE_BLOCK || clickedItem.getType() == Material.YELLOW_DYE) {
+                player.sendMessage(getConf("messages.prefix") + getConf("messages.idiotProof"));
                 try {
                     SignGUI gui = SignGUI.builder()
                             // set lines
@@ -477,6 +440,8 @@ public final class BankWare extends JavaPlugin implements Listener, CommandExecu
                             // set the sign color
                             .setColor(DyeColor.BLACK)
 
+                            .setLocation(player.getLocation().subtract(0, 5, 0))
+
                             // set the handler/listener (called when the player finishes editing)
                             .setHandler((p, result) -> {
                                 String line0 = result.getLine(0);
@@ -491,7 +456,7 @@ public final class BankWare extends JavaPlugin implements Listener, CommandExecu
 
                                 if (amount <= 0) amount = -1;
 
-                                double finalAmount = Math.round(amount*100.0)/100.0; // Round to 2 digits after the .
+                                double finalAmount = round(amount); // Round to 2 digits after the .
                                 return List.of(
                                         SignGUIAction.run(() -> {
                                             // Run on the main thread
@@ -512,6 +477,54 @@ public final class BankWare extends JavaPlugin implements Listener, CommandExecu
         }
     }
 
+    public int getTimeLeftTillInterest(Player player){
+        if(accounts.getString(player.getUniqueId().toString() + ".nextInterest") == null) setNextInterest(player, true);
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime nextInterest = LocalDateTime.parse(accounts.getString(player.getUniqueId().toString() + ".nextInterest"));
+        Duration duration = Duration.between(now, nextInterest);
+        return (int) duration.toMinutes();
+    }
+
+    public void setNextInterest(Player player, boolean startingNow){
+        if(startingNow) {
+            accounts.set(player.getUniqueId().toString() + ".nextInterest",
+                    LocalDateTime.now().plusMinutes(config.getInt("interest.interval")).toString());
+        }
+        else{
+            accounts.set(player.getUniqueId().toString() + ".nextInterest",
+                    LocalDateTime.parse(accounts.getString(player.getUniqueId().toString() + ".nextInterest"))
+                            .plusMinutes(config.getInt("interest.interval")).toString());
+        }
+
+        saveAccountsConfig();
+    }
+
+    public void calculateAccumulatedInterest(Player player){
+        if(getTimeLeftTillInterest(player) > config.getInt("interest.interval")){
+            setNextInterest(player, true);
+        }
+        while(LocalDateTime.now().isAfter(LocalDateTime.parse(accounts.getString(player.getUniqueId().toString() + ".nextInterest")))){
+            double balance = getBankBalance(player);
+            double interestPerc = getPlayersInterestPerc(player);
+            double interestAmount = balance * (interestPerc / 100);
+            interestAmount = round(interestAmount); // Round to 2 digits after the .
+            accounts.set(player.getUniqueId().toString() + ".balance", balance + interestAmount);
+            setNextInterest(player, false);
+            saveAccountsConfig();
+        }
+    }
+
+    public double getPlayersInterestPerc(Player player){
+        List<String> tiers = new ArrayList<>(config.getConfigurationSection("interest.tiers").getKeys(false));
+
+        for (int i = tiers.size() - 1; i >= 0; i--) {
+            String tier = tiers.get(i);
+            double value = config.getDouble("interest.tiers." + tier);
+            if(player.hasPermission("bankware.interest." + tier)) return value;
+        }
+        return 0;
+    }
+
 
     @Override
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
@@ -527,6 +540,10 @@ public final class BankWare extends JavaPlugin implements Listener, CommandExecu
                     player.sendMessage(getConf("messages.prefix") + "§2Config reloaded.");
                     return true;
                 }
+            }
+
+            else if(cmd.getName().equalsIgnoreCase("bank")){
+                openBankerGUI(player);
             }
 
             else if(cmd.getName().equalsIgnoreCase("createbanker")) {
@@ -609,6 +626,10 @@ public final class BankWare extends JavaPlugin implements Listener, CommandExecu
 
     // ----------------- UTILS -----------------
 
+    public double round(double amount){
+        return Math.round(amount*100.0)/100.0;
+    }
+
     public YamlConfiguration getAccountsConfig(){
         File accountsFile = new File(getDataFolder(), "accounts.yml");
         if (!accountsFile.exists()) {
@@ -625,24 +646,6 @@ public final class BankWare extends JavaPlugin implements Listener, CommandExecu
         } catch (IOException e) {
             e.printStackTrace();
         }
-    }
-
-    public List<Integer> getTimeLeftUntilMidnight() {
-        LocalTime now = LocalTime.now();
-        LocalTime midnight = LocalTime.MIDNIGHT; // 00:00
-        Duration duration = Duration.between(now, midnight);
-
-        // If it's past midnight, add 24h to correctly count till next midnight
-        if (duration.isNegative()) {
-            duration = duration.plusHours(24);
-        }
-
-        long hours = duration.toHours();
-        long minutes = duration.toMinutes() % 60; // Get remaining minutes
-        List<Integer> timeLeft = new ArrayList<>();
-        timeLeft.add((int) hours);
-        timeLeft.add((int) minutes);
-        return timeLeft;
     }
 
     // Method to fill inventory with black stained glass panes

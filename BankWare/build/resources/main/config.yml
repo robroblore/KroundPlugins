@@ -6,7 +6,7 @@
 # |____/ \__,_|_| |_|_|\_\  \/  \/ \__,_|_|  \___|
 # Default configuration file made by LoreWare (robroblore)
 # Note: If you ever want to display the '&' symbol in a message, use '&&' instead.
-# Permissions: bankware.createdeletePOI, bankware.canReload
+# Permissions: bankware.createdeletePOI, bankware.canReload, bankware.bankcommand
 
 messages:
   prefix: "&l&dBankWare ▶ &r"
@@ -14,7 +14,8 @@ messages:
   depositSuccess: "&2Ai depozitat &6${amount}&2 in contul tau. Sold curent: &6${balance}"
   depositFail: "&4Nu ai destui bani pentru a depozita suma de &6${amount}."
   withdrawSuccess: "&2Ai retras &6${amount}&2 din contul tau. Sold curent: &6${balance}"
-  withdrawFail: "&4Nu ai destui bani pentru a retrage suma de &6${amount}."
+  withdrawFail: "&4Nu ai destui bani in banca pentru a retrage suma de &6${amount}."
+  idiotProof: "&2Scrie suma dorita pe prima linie."
 
 UI:
   bankerTitle: "&2Banca"
@@ -56,5 +57,17 @@ UI:
 
 
 interest:
-  percentage: 0.5
+  tiers:
+    tier1: 0.5 # In %, default: 0.5
+    tier2: 0.75 # In %
+    tier3: 0.8 # In %
+    tier4: 0.9 # In %
+    tier5: 1 # In %
+    tier6: 1.5 # In %
+    tier7: 2 # In %
+    tier8: 2.5 # In %
+    tier9: 3 # In %
+    tier10: 5.0 # In %
+
+  interval: 1440 # In minutes, default: 1440 (24 hours)
   lastInterest: 0
