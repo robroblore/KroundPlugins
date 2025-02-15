@@ -55,7 +55,7 @@ public final class BankWare extends JavaPlugin implements Listener, CommandExecu
         accounts = getAccountsConfig();
 
         RegisteredServiceProvider<Economy> rsp = getServer().getServicesManager().getRegistration(Economy.class);
-        econ = rsp.getProvider();
+        econ = rsp.getProvider(); 
 
         getServer().getPluginManager().registerEvents(this, this);
     }
