@@ -47,15 +47,14 @@ public final class BankWare extends JavaPlugin implements Listener, CommandExecu
 //        saveResource("config.yml", /* replace */ true);
 //        config = getConfig();
         saveDefaultConfig();
-        config = getConfig();
-        config.options().copyDefaults(true);
+        getConfig().options().copyDefaults(true);
         saveConfig();
         config = getConfig();
 
         accounts = getAccountsConfig();
 
         RegisteredServiceProvider<Economy> rsp = getServer().getServicesManager().getRegistration(Economy.class);
-        econ = rsp.getProvider(); 
+        econ = rsp.getProvider();
 
         getServer().getPluginManager().registerEvents(this, this);
     }

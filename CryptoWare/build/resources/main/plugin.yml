@@ -1,0 +1,39 @@
+name: CryptoWare
+version: '1.0'
+main: org.loreware.cryptoWare.CryptoWare
+api-version: '1.21'
+prefix: LoreWare
+load: STARTUP
+authors: [ robroblore ]
+description: Crypto mining and selling
+depend: [BankWare, Citizens]
+
+commands:
+  cryptoware:
+    description: Reload the config with /bankware reload
+    permission: bankware.canReload
+
+  createtrader:
+    description: Create a trader
+    permission: bankware.createdeletePOI
+
+  deletetrader:
+    description: Delete a trader
+    permission: bankware.createdeletePOI
+
+  trader:
+    description: Open the trader anywhere
+    permission: bankware.tradercommand
+
+permissions:
+  cryptoware.canReload:
+    description: Can reload the config
+    default: op
+
+  cryptoware.createdeletePOI:
+    description: Can create a point of interest (trader or ?)
+    default: op
+
+  cryptoware.tradercommand:
+    description: Can use the trader command
+    default: op
