@@ -1,10 +1,15 @@
 package org.loreware.cryptoWare;
 
+import com.destroystokyo.paper.profile.PlayerProfile;
+import me.arcaniax.hdb.api.DatabaseLoadEvent;
+import me.arcaniax.hdb.api.HeadDatabaseAPI;
 import net.citizensnpcs.api.CitizensAPI;
+import net.citizensnpcs.api.event.NPCRightClickEvent;
 import net.citizensnpcs.api.npc.NPC;
 import net.citizensnpcs.api.npc.NPCRegistry;
 import net.citizensnpcs.trait.SkinTrait;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -16,23 +21,28 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.profile.PlayerTextures;
 import org.loreware.bankWare.BankWare;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.net.MalformedURLException;
+import java.util.*;
+import java.net.URI;
 
 public final class CryptoWare extends JavaPlugin implements Listener, CommandExecutor {
 
     FileConfiguration config;
     FileConfiguration accounts;
+
+    private static HeadDatabaseAPI headDatabaseAPI;
 
     BankWare bankWare;
 
@@ -49,10 +59,61 @@ public final class CryptoWare extends JavaPlugin implements Listener, CommandExe
         accounts = getAccountsConfig();
 
         bankWare = (BankWare) Bukkit.getPluginManager().getPlugin("BankWare");
-
         getServer().getPluginManager().registerEvents(this, this);
 
-        scheduleNextDailyEvent();
+        Bukkit.getScheduler().runTaskLater(this, this::scheduleNextDailyEvent, 20L);
+    }
+
+    public void openTraderGUI(Player player) {
+        // Use the new method to create the inventory with a title as Component
+        Inventory inv = Bukkit.createInventory(null, 27, Component.text(getConf("UI.traderTitle")));
+
+        // Create items with new Component-based display names
+        ItemStack buyCoinItem = new ItemStack(Material.CHEST);
+        ItemMeta meta = buyCoinItem.getItemMeta();
+        if (meta != null) {
+            meta.itemName(Component.text(getConf("UI.buyCoinItem")));
+            buyCoinItem.setItemMeta(meta);
+        }
+
+        ItemStack sellCoinItem = new ItemStack(Material.DROPPER);
+        ItemMeta meta2 = sellCoinItem.getItemMeta();
+        if (meta2 != null) {
+            meta2.itemName(Component.text(getConf("UI.sellCoinItem")));
+            sellCoinItem.setItemMeta(meta2);
+        }
+
+        ItemStack infoItem = getInfoItem(player);
+
+        // Fill the inventory with black stained glass panes
+        fillInventoryWithGlass(inv);
+
+        // Place items in GUI
+        inv.setItem(11, buyCoinItem);
+        inv.setItem(13, infoItem);
+        inv.setItem(15, sellCoinItem);
+
+        // Open the GUI for the player
+        player.openInventory(inv);
+    }
+
+    public ItemStack getInfoItem(Player player){
+        ItemStack infoItem = getHead("infoItem");
+        ItemMeta meta = infoItem.getItemMeta();
+        if (meta != null) {
+            meta.displayName(Component.text(getConf("UI.infoItem")).decoration(TextDecoration.ITALIC, false));
+            List<Component> lore = new ArrayList<>();
+
+            for(String line: getConfList("UI.infoItemLore")){
+                lore.add(Component.text(line
+                        .replace("{player}", player.getName())
+                        .replace("{balance}", String.valueOf(0))));
+            }
+            meta.lore(lore);
+            infoItem.setItemMeta(meta);
+        }
+
+        return infoItem;
     }
 
 
@@ -72,7 +133,7 @@ public final class CryptoWare extends JavaPlugin implements Listener, CommandExe
             }
 
             else if(cmd.getName().equalsIgnoreCase("trader")){
-//                openTraderGUI(player);
+                openTraderGUI(player);
             }
 
             else if(cmd.getName().equalsIgnoreCase("createtrader")) {
@@ -152,6 +213,21 @@ public final class CryptoWare extends JavaPlugin implements Listener, CommandExe
         return npc;
     }
 
+    @EventHandler
+    public void onNpcClick(NPCRightClickEvent event) {
+        NPC npc = event.getNPC();
+
+        if (npc.data().get("isTrader") == null) {
+            return;
+        }
+
+        Player player = event.getClicker();
+
+        player.sendMessage(getConf("messages.prefix") + getConf("messages.traderInteract")
+                .replace("{name}", npc.getName()));
+        openTraderGUI(player);
+    }
+
 
     // ----------------- UTILS -----------------
 
@@ -227,8 +303,54 @@ public final class CryptoWare extends JavaPlugin implements Listener, CommandExe
         return list;
     }
 
+    public ItemStack getHead(String confHead) {
+        if(config.getBoolean("heads." + confHead + ".useBase64") || headDatabaseAPI == null){
+            return getCustomHead(getConf("heads." + confHead + ".id"));
+        }
+        else {
+            return getHeadDB(config.getString("heads." + confHead + ".id"));
+        }
+    }
+
+    public static ItemStack getHeadDB(String id) {
+        if (headDatabaseAPI == null) {
+            Bukkit.getLogger().severe("HeadDatabaseAPI is not initialized!");
+            return null;
+        }
+        return headDatabaseAPI.getItemHead(id);
+    }
+
+    public static ItemStack getCustomHead(String base64) {
+        ItemStack head = new ItemStack(Material.PLAYER_HEAD);
+        SkullMeta meta = (SkullMeta) head.getItemMeta();
+
+        String decoded = new String(Base64.getDecoder().decode(base64));
+
+        if (meta != null) {
+            PlayerProfile profile = Bukkit.createProfile(UUID.randomUUID());
+            PlayerTextures textures = profile.getTextures();
+
+            try {
+                textures.setSkin(URI.create(decoded.substring("{\"textures\":{\"SKIN\":{\"url\":\"".length(), decoded.length() - "\"}}}".length())).toURL());
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
+            }
+
+            profile.setTextures(textures);
+            meta.setOwnerProfile(profile);
+            head.setItemMeta(meta);
+        }
+
+        return head;
+    }
+
     // ----------------- UTILS -----------------
 
+
+    @EventHandler
+    public void onDatabaseLoad(DatabaseLoadEvent e) {
+        headDatabaseAPI = new HeadDatabaseAPI();
+    }
 
     @Override
     public void onDisable() {

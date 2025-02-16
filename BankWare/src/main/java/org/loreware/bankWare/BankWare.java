@@ -287,9 +287,9 @@ public final class BankWare extends JavaPlugin implements Listener, CommandExecu
 
     public ItemStack getInfoItem(Player player){
         ItemStack infoItem = new ItemStack(Material.GOLD_INGOT);
-        ItemMeta meta4 = infoItem.getItemMeta();
-        if (meta4 != null) {
-            meta4.itemName(Component.text(getConf("UI.infoItem")));
+        ItemMeta meta = infoItem.getItemMeta();
+        if (meta != null) {
+            meta.itemName(Component.text(getConf("UI.infoItem")));
             List<Component> lore = new ArrayList<>();
             double bal = getBankBalance(player);
             double interestPerc = getPlayersInterestPerc(player);
@@ -305,8 +305,8 @@ public final class BankWare extends JavaPlugin implements Listener, CommandExecu
                         .replace("{nextInterestHours}", String.valueOf(getTimeLeftTillInterest(player) / 60))
                         .replace("{nextInterestMinutes}", String.valueOf(getTimeLeftTillInterest(player) % 60))));
             }
-            meta4.lore(lore);
-            infoItem.setItemMeta(meta4);
+            meta.lore(lore);
+            infoItem.setItemMeta(meta);
         }
 
         return infoItem;

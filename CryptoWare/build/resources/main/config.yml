@@ -9,3 +9,24 @@
 # Default configuration file made by LoreWare (robroblore)
 # Note: If you ever want to display the '&' symbol in a message, use '&&' instead.
 # Permissions: cryptoware.canReload, cryptowarew.createdeletePOI
+
+messages:
+  prefix: "&l&dCryptoWare ▶ &r"
+  traderInteract: "&2Hai salut. Nu vrei sa cumperi niste cryptomonede? E viitorul fratelo."
+
+UI:
+  traderTitle: "&2Trader"
+  buyCoinItem: "&2Buy Coin"
+  sellCoinItem: "&2Sell Coin"
+  infoItem: "&2Informatii"
+  infoItemLore: # Informatiile pot fi schimbate in orice ordine, ai access la urmatoarele variabile: {player}, {balance}
+    - "Sold coinuri: &2{balance}"
+
+
+trader:
+  worldForDayCycle: "world"
+
+heads: # Set to false to use headDB id and true to use base64
+  infoItem:
+    useBase64: false
+    id: "13124"
