@@ -650,7 +650,7 @@ public final class BankWare extends JavaPlugin implements Listener, CommandExecu
     // Method to fill inventory with black stained glass panes
     private void fillInventoryWithGlass(Inventory inventory) {
         // Create a black stained glass pane ItemStack
-        ItemStack blackGlass = new ItemStack(Material.BLACK_STAINED_GLASS_PANE, 1); // 1 pane at a time
+        ItemStack blackGlass = new ItemStack(Material.GRAY_STAINED_GLASS_PANE, 1); // 1 pane at a time
 
         // Optionally, you can set a custom name or other properties for the glass panes
         ItemMeta meta = blackGlass.getItemMeta();

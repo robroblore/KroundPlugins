@@ -8,8 +8,6 @@ import net.citizensnpcs.api.event.NPCRightClickEvent;
 import net.citizensnpcs.api.npc.NPC;
 import net.citizensnpcs.api.npc.NPCRegistry;
 import net.citizensnpcs.trait.SkinTrait;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -23,9 +21,7 @@ import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.profile.PlayerTextures;
@@ -39,15 +35,19 @@ import java.net.URI;
 
 public final class CryptoWare extends JavaPlugin implements Listener, CommandExecutor {
 
+    private static CryptoWare instance;
+
     FileConfiguration config;
     FileConfiguration accounts;
 
     private static HeadDatabaseAPI headDatabaseAPI;
 
     BankWare bankWare;
+    GUIs GUIs;
 
     @Override
     public void onEnable() {
+        instance = this;
         System.out.println("CryptoWare plugin enabled");
         saveResource("config.yml", /* replace */ true);
         config = getConfig();
@@ -60,129 +60,27 @@ public final class CryptoWare extends JavaPlugin implements Listener, CommandExe
 
         bankWare = (BankWare) Bukkit.getPluginManager().getPlugin("BankWare");
         getServer().getPluginManager().registerEvents(this, this);
+        getServer().getPluginManager().registerEvents(new InventoryInteractions(), this);
+
+        GUIs = new GUIs();
 
         Bukkit.getScheduler().runTaskLater(this, this::scheduleNextDailyEvent, 20L);
     }
 
-    public void openTraderGUI(Player player) {
-        // Use the new method to create the inventory with a title as Component
-        Inventory inv = Bukkit.createInventory(null, 27, Component.text(getConf("UI.traderTitle")));
+    @EventHandler
+    public void onNpcClick(NPCRightClickEvent event) {
+        NPC npc = event.getNPC();
 
-        // Create items with new Component-based display names
-        ItemStack buyCoinItem = new ItemStack(Material.CHEST);
-        ItemMeta meta = buyCoinItem.getItemMeta();
-        if (meta != null) {
-            meta.itemName(Component.text(getConf("UI.buyCoinItem")));
-            buyCoinItem.setItemMeta(meta);
+        if (npc.data().get("isTrader") == null) {
+            return;
         }
 
-        ItemStack sellCoinItem = new ItemStack(Material.DROPPER);
-        ItemMeta meta2 = sellCoinItem.getItemMeta();
-        if (meta2 != null) {
-            meta2.itemName(Component.text(getConf("UI.sellCoinItem")));
-            sellCoinItem.setItemMeta(meta2);
-        }
+        Player player = event.getClicker();
 
-        ItemStack infoItem = getInfoItem(player);
-
-        // Fill the inventory with black stained glass panes
-        fillInventoryWithGlass(inv);
-
-        // Place items in GUI
-        inv.setItem(11, buyCoinItem);
-        inv.setItem(13, infoItem);
-        inv.setItem(15, sellCoinItem);
-
-        // Open the GUI for the player
-        player.openInventory(inv);
+        player.sendMessage(getConf("messages.prefix") + getConf("messages.traderInteract")
+                .replace("{name}", npc.getName()));
+        GUIs.openTraderGUI(player);
     }
-
-    public ItemStack getInfoItem(Player player){
-        ItemStack infoItem = getHead("infoItem");
-        ItemMeta meta = infoItem.getItemMeta();
-        if (meta != null) {
-            meta.displayName(Component.text(getConf("UI.infoItem")).decoration(TextDecoration.ITALIC, false));
-            List<Component> lore = new ArrayList<>();
-
-            for(String line: getConfList("UI.infoItemLore")){
-                lore.add(Component.text(line
-                        .replace("{player}", player.getName())
-                        .replace("{balance}", String.valueOf(0))));
-            }
-            meta.lore(lore);
-            infoItem.setItemMeta(meta);
-        }
-
-        return infoItem;
-    }
-
-
-    @Override
-    public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
-        if (sender instanceof Player) {
-            Player player = (Player) sender;
-
-            if (cmd.getName().equalsIgnoreCase("cryptoware")) {
-                if (args.length == 1 && (args[0].equalsIgnoreCase("reload") || args[0].equalsIgnoreCase("rl"))) {
-                    reloadConfig();
-                    config = getConfig();
-
-                    player.sendMessage(getConf("messages.prefix") + "§2Config reloaded.");
-                    return true;
-                }
-            }
-
-            else if(cmd.getName().equalsIgnoreCase("trader")){
-                openTraderGUI(player);
-            }
-
-            else if(cmd.getName().equalsIgnoreCase("createtrader")) {
-                if (args.length == 2) {
-                    createTrader(player.getLocation(), args[0], args[1]);
-                    player.sendMessage(getConf("messages.prefix") + "§2Trader created.");
-                }
-                else {
-                    player.sendMessage(getConf("messages.prefix") + "§4Usage: /createtrader <name> <skin>");
-                }
-            }
-
-            else if (cmd.getName().equalsIgnoreCase("deletetrader")) {
-                if (args.length == 1) {
-                    if(deleteTrader(args[0])) player.sendMessage(getConf("messages.prefix") + "§2Trader deleted.");
-                    else player.sendMessage(getConf("messages.prefix") + "§4Trader not found.");
-                } else {
-                    player.sendMessage(getConf("messages.prefix") + "§4Usage: /deletetrader <name>");
-                }
-            }
-        }
-        return true;
-    }
-
-    public List<String> onTabComplete(CommandSender sender, Command cmd, String label, String[] args) {
-        if (cmd.getName().equalsIgnoreCase("cryptoware")) {
-            if (sender instanceof Player) {
-                List<String> list = new ArrayList<>();
-
-                list.add("reload");
-                return list;
-            }
-        }
-
-        else if (cmd.getName().equalsIgnoreCase("createtrader")) {
-            return Collections.emptyList();
-        }
-
-        else if (cmd.getName().equalsIgnoreCase("deletetrader")) {
-            List<String> list = new ArrayList<>();
-            for(NPC npc: CitizensAPI.getNPCRegistry()){
-                if(npc.data().get("isTrader") != null) list.add(npc.getName());
-            }
-
-            return list;
-        }
-        return null;
-    }
-
 
     public boolean deleteTrader(String name) {
         for (NPC npc : CitizensAPI.getNPCRegistry()) {
@@ -213,21 +111,6 @@ public final class CryptoWare extends JavaPlugin implements Listener, CommandExe
         return npc;
     }
 
-    @EventHandler
-    public void onNpcClick(NPCRightClickEvent event) {
-        NPC npc = event.getNPC();
-
-        if (npc.data().get("isTrader") == null) {
-            return;
-        }
-
-        Player player = event.getClicker();
-
-        player.sendMessage(getConf("messages.prefix") + getConf("messages.traderInteract")
-                .replace("{name}", npc.getName()));
-        openTraderGUI(player);
-    }
-
 
     // ----------------- UTILS -----------------
 
@@ -238,6 +121,7 @@ public final class CryptoWare extends JavaPlugin implements Listener, CommandExe
 
         Bukkit.getScheduler().runTaskLater(this, () -> {
             // Do something
+            // TODO: ask denis time set?
             scheduleNextDailyEvent(); // Reschedule for the next day
         }, ticksUntilNextDay);
     }
@@ -257,24 +141,6 @@ public final class CryptoWare extends JavaPlugin implements Listener, CommandExe
             accounts.save(accountsFile);
         } catch (IOException e) {
             e.printStackTrace();
-        }
-    }
-
-    // Method to fill inventory with black stained glass panes
-    private void fillInventoryWithGlass(Inventory inventory) {
-        // Create a black stained glass pane ItemStack
-        ItemStack blackGlass = new ItemStack(Material.BLACK_STAINED_GLASS_PANE, 1); // 1 pane at a time
-
-        // Optionally, you can set a custom name or other properties for the glass panes
-        ItemMeta meta = blackGlass.getItemMeta();
-        if (meta != null) {
-            meta.itemName(Component.text("")); // Optional: Set a display name (you can leave it empty)
-            blackGlass.setItemMeta(meta);
-        }
-
-        // Fill the entire inventory with black stained glass panes
-        for (int i = 0; i < inventory.getSize(); i++) {
-            inventory.setItem(i, blackGlass); // Set the item at the current slot
         }
     }
 
@@ -346,6 +212,12 @@ public final class CryptoWare extends JavaPlugin implements Listener, CommandExe
 
     // ----------------- UTILS -----------------
 
+    public static CryptoWare getInstance() {
+        if (instance == null) {
+            throw new IllegalStateException("CryptoWare instance is not initialized yet!");
+        }
+        return instance;
+    }
 
     @EventHandler
     public void onDatabaseLoad(DatabaseLoadEvent e) {
@@ -355,5 +227,72 @@ public final class CryptoWare extends JavaPlugin implements Listener, CommandExe
     @Override
     public void onDisable() {
         System.out.println("cryptoware plugin disabled");
+    }
+
+
+    @Override
+    public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
+        if (sender instanceof Player) {
+            Player player = (Player) sender;
+
+            if (cmd.getName().equalsIgnoreCase("cryptoware")) {
+                if (args.length == 1 && (args[0].equalsIgnoreCase("reload") || args[0].equalsIgnoreCase("rl"))) {
+                    reloadConfig();
+                    config = getConfig();
+
+                    player.sendMessage(getConf("messages.prefix") + "§2Config reloaded.");
+                    return true;
+                }
+            }
+
+            else if(cmd.getName().equalsIgnoreCase("trader")){
+                GUIs.openTraderGUI(player);
+            }
+
+            else if(cmd.getName().equalsIgnoreCase("createtrader")) {
+                if (args.length == 2) {
+                    createTrader(player.getLocation(), args[0], args[1]);
+                    player.sendMessage(getConf("messages.prefix") + "§2Trader created.");
+                }
+                else {
+                    player.sendMessage(getConf("messages.prefix") + "§4Usage: /createtrader <name> <skin>");
+                }
+            }
+
+            else if (cmd.getName().equalsIgnoreCase("deletetrader")) {
+                if (args.length == 1) {
+                    if(deleteTrader(args[0])) player.sendMessage(getConf("messages.prefix") + "§2Trader deleted.");
+                    else player.sendMessage(getConf("messages.prefix") + "§4Trader not found.");
+                } else {
+                    player.sendMessage(getConf("messages.prefix") + "§4Usage: /deletetrader <name>");
+                }
+            }
+        }
+        return true;
+    }
+
+    public List<String> onTabComplete(CommandSender sender, Command cmd, String label, String[] args) {
+        if (cmd.getName().equalsIgnoreCase("cryptoware")) {
+            if (sender instanceof Player) {
+                List<String> list = new ArrayList<>();
+
+                list.add("reload");
+                return list;
+            }
+        }
+
+        else if (cmd.getName().equalsIgnoreCase("createtrader")) {
+            return Collections.emptyList();
+        }
+
+        else if (cmd.getName().equalsIgnoreCase("deletetrader")) {
+            List<String> list = new ArrayList<>();
+            for(NPC npc: CitizensAPI.getNPCRegistry()){
+                if(npc.data().get("isTrader") != null) list.add(npc.getName());
+            }
+
+            return list;
+        }
+        return null;
     }
 }

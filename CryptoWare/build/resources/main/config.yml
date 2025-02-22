@@ -10,23 +10,76 @@
 # Note: If you ever want to display the '&' symbol in a message, use '&&' instead.
 # Permissions: cryptoware.canReload, cryptowarew.createdeletePOI
 
+servers:
+  tier1:
+    price: 100
+    durability: 100
+    production: 1.5
+
+  tier2:
+    price: 500
+    durability: 200
+    production: 5.0
+
+  tier3:
+    price: 1000
+    durability: 300
+    production: 10.0
+
 messages:
   prefix: "&l&dCryptoWare ▶ &r"
   traderInteract: "&2Hai salut. Nu vrei sa cumperi niste cryptomonede? E viitorul fratelo."
 
 UI:
-  traderTitle: "&2Trader"
-  buyCoinItem: "&2Buy Coin"
-  sellCoinItem: "&2Sell Coin"
-  infoItem: "&2Informatii"
-  infoItemLore: # Informatiile pot fi schimbate in orice ordine, ai access la urmatoarele variabile: {player}, {balance}
-    - "Sold coinuri: &2{balance}"
+  trader:
+    title: "&2Trader"
+    myServersItem: "&2Serverele mele"
+    marketItem: "&2Market"
+    infoItem: "&2Informatii"
+    infoItemLore: # Informatiile pot fi schimbate in orice ordine, ai access la urmatoarele variabile: {player}, {balance}
+      - "Sold coinuri: &2{balance}"
 
+  myServers:
+    title: "&2Serverele mele"
+
+  market:
+    title: "&2Market"
+    serverRowItem: "&2Cumpara servere:"
+    serverTier1Item: "&2Noob Server"
+    serverTier2Item: "&2Hacker Server"
+    serverTier3Item: "&2Quantum Server"
+    serverLore:
+      - "&dPret: &6${price}"
+      - "&dDurabilitate: &6{durability}"
+      - "&dProductie: &6${production}/h"
+
+  quitItem: "&4Inchide"
+  backItem: "&cInapoi"
 
 trader:
   worldForDayCycle: "world"
 
-heads: # Set to false to use headDB id and true to use base64
+heads: # Set to false to use headDB id and true to use base64 value
   infoItem:
     useBase64: false
     id: "13124"
+
+  market:
+    useBase64: false
+    id: "7112"
+
+  serverRow:
+    useBase64: false
+    id: "22589"
+
+  serverTier1:
+    useBase64: false
+    id: "41632"
+
+  serverTier2:
+    useBase64: false
+    id: "8742"
+
+  serverTier3:
+    useBase64: false
+    id: "43820"
