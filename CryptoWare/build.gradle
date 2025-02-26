@@ -34,6 +34,10 @@ dependencies {
     compileOnly fileTree(dir: 'libs', include: ['*.jar'])  // Include all jars in the 'libs' folder
 }
 
+jar {
+    destinationDirectory = file("C:\\Users\\rober\\Desktop\\plugins\\plugins")
+}
+
 def targetJavaVersion = 21
 java {
     def javaVersion = JavaVersion.toVersion(targetJavaVersion)

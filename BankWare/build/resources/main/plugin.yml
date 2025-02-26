@@ -10,16 +10,8 @@ depend: [Citizens, Vault] # , ProtocolLib
 
 commands:
   bankware:
-    description: Reload the config with /bankware reload
-    permission: bankware.canReload
-
-  createbanker:
-      description: Create a banker
-      permission: bankware.createdeletePOI
-
-  deletebanker:
-      description: Delete a banker
-      permission: bankware.createdeletePOI
+    description: Bank commands like reload, give, take, balance, reload
+    permission: bankware.givetake
 
   bank:
     description: Open the bank anywhere
@@ -32,6 +24,10 @@ permissions:
 
   bankware.createdeletePOI:
     description: Can create a point of interest (banker or vault)
+    default: op
+
+  bankware.givetake:
+    description: Can give and take money from players
     default: op
 
   bankware.bankcommand:

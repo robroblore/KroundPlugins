@@ -1,159 +1,168 @@
 package org.loreware.cryptoWare;
 
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.TextDecoration;
-import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.persistence.PersistentDataContainer;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Map;
 
 public class GUIs {
 
     CryptoWare cryptoWare = CryptoWare.getInstance();
 
     public void openTraderGUI(Player player) {
+        String UIpath = "UI.trader.";
         // Use the new method to create the inventory with a title as Component
-        Inventory inv = Bukkit.createInventory(null, 36, Component.text(cryptoWare.getConf("UI.trader.title")));
+        Inventory inv = cryptoWare.getInventoryFromConfig(UIpath, 36);
 
-        // Create items with new Component-based display names
-        ItemStack myServersItem = cryptoWare.getHead("serverTier2");
-        ItemMeta meta = myServersItem.getItemMeta();
-        if (meta != null) {
-            meta.displayName(Component.text(cryptoWare.getConf("UI.trader.myServersItem")).decoration(TextDecoration.ITALIC, false));
-            myServersItem.setItemMeta(meta);
-        }
+        ItemStack myServersItem = cryptoWare.getItemStackFromConfig(UIpath+"myServersItem", null);
+        ItemStack shopItem = cryptoWare.getItemStackFromConfig(UIpath+"shopItem", null);
+        ItemStack marketItem = cryptoWare.getItemStackFromConfig(UIpath+"marketItem", null);
 
-        ItemStack marketItem = cryptoWare.getHead("market");
-        ItemMeta meta2 = marketItem.getItemMeta();
-        if (meta2 != null) {
-            meta2.displayName(Component.text(cryptoWare.getConf("UI.trader.marketItem")).decoration(TextDecoration.ITALIC, false));
-            marketItem.setItemMeta(meta2);
-        }
+        Map<String, String> infoPlaceholders = new java.util.HashMap<>(Map.of());
+        infoPlaceholders.put("{player}", player.getName());
+        infoPlaceholders.put("{balance}", "69");
+        ItemStack infoItem = cryptoWare.getItemStackFromConfig(UIpath+"infoItem", infoPlaceholders);
 
-        // Fill the inventory with black stained glass panes
-        fillInventoryWithGlass(inv);
+        fillInventory(inv, UIpath);
 
         // Place items in GUI
-        inv.setItem(11, myServersItem);
-        inv.setItem(13, getInfoItem(player));
-        inv.setItem(15, marketItem);
+        inv.setItem(cryptoWare.getItemSlotFromConfig(UIpath+"myServersItem", 11), myServersItem);
+        inv.setItem(cryptoWare.getItemSlotFromConfig(UIpath+"shopItem", 13), shopItem);
+        inv.setItem(cryptoWare.getItemSlotFromConfig(UIpath+"marketItem", 15), marketItem);
 
-        inv.setItem(31, getQuitItem());
-//        inv.setItem(30, getBackItem());
+        inv.setItem(cryptoWare.getItemSlotFromConfig(UIpath+"infoItem", 35), infoItem);
+
+        ItemStack quitItem = cryptoWare.getItemStackFromConfig(UIpath+"quitItem", null);
+        inv.setItem(cryptoWare.getItemSlotFromConfig(UIpath+"quitItem", 31), quitItem);
 
         // Open the GUI for the player
         player.openInventory(inv);
     }
 
+    public void openShopGUI(Player player){
+        String UIpath = "UI.shop.";
+        Inventory inv = cryptoWare.getInventoryFromConfig(UIpath, 54);
+        fillInventory(inv, UIpath);
+
+        ItemStack serverRowItem = cryptoWare.getItemStackFromConfig(UIpath+"serverRowItem", null);
+
+        inv.setItem(cryptoWare.getItemSlotFromConfig(UIpath+"serverRowItem", 11), serverRowItem);
+        inv.setItem(cryptoWare.getItemSlotFromConfig(UIpath+"serverTier1Item", 13), getServerItem("1"));
+        inv.setItem(cryptoWare.getItemSlotFromConfig(UIpath+"serverTier2Item", 14), getServerItem("2"));
+        inv.setItem(cryptoWare.getItemSlotFromConfig(UIpath+"serverTier3Item", 15), getServerItem("3"));
+
+        ItemStack upgradesRowItem = cryptoWare.getItemStackFromConfig(UIpath+"upgradesRowItem", null);
+
+        inv.setItem(cryptoWare.getItemSlotFromConfig(UIpath+"upgradesRowItem", 29), upgradesRowItem);
+        inv.setItem(cryptoWare.getItemSlotFromConfig(UIpath+"upgradeExtinguisherItem", 31), getUpgradeItem("Extinguisher"));
+        inv.setItem(cryptoWare.getItemSlotFromConfig(UIpath+"upgradeOverclockItem", 32), getUpgradeItem("Overclock"));
+        inv.setItem(cryptoWare.getItemSlotFromConfig(UIpath+"upgradeTestItem", 33), getUpgradeItem("Test"));
+
+        Map<String, String> infoPlaceholders = new java.util.HashMap<>(Map.of());
+        infoPlaceholders.put("{player}", player.getName());
+        infoPlaceholders.put("{balance}", "69");
+        ItemStack infoItem = cryptoWare.getItemStackFromConfig(UIpath+"infoItem", infoPlaceholders);
+
+        inv.setItem(cryptoWare.getItemSlotFromConfig(UIpath+"infoItem", 53), infoItem);
+
+        ItemStack quitItem = cryptoWare.getItemStackFromConfig(UIpath+"quitItem", null);
+        ItemStack backItem = cryptoWare.getItemStackFromConfig(UIpath+"backItem", null);
+        inv.setItem(cryptoWare.getItemSlotFromConfig(UIpath+"quitItem", 49), quitItem);
+        inv.setItem(cryptoWare.getItemSlotFromConfig(UIpath+"backItem", 48), backItem);
+
+        player.openInventory(inv);
+    }
+
     public void openMarketGUI(Player player){
+        String UIpath = "UI.market.";
         // Use the new method to create the inventory with a title as Component
-        Inventory inv = Bukkit.createInventory(null, 54, Component.text(cryptoWare.getConf("UI.market.title")));
+        Inventory inv = cryptoWare.getInventoryFromConfig(UIpath, 54);
 
-        ItemStack serverRowItem = cryptoWare.getHead("serverRow");
-        ItemMeta meta = serverRowItem.getItemMeta();
-        if (meta != null) {
-            meta.displayName(Component.text(cryptoWare.getConf("UI.market.serverRowItem")).decoration(TextDecoration.ITALIC, false));
-            serverRowItem.setItemMeta(meta);
-        }
+        fillInventory(inv, UIpath);
 
-
-        fillInventoryWithGlass(inv);
-
-        inv.setItem(11, serverRowItem);
-        inv.setItem(13, getServerItem("1"));
-        inv.setItem(14, getServerItem("2"));
-        inv.setItem(15, getServerItem("3"));
-
-        inv.setItem(49, getQuitItem());
-        inv.setItem(48, getBackItem());
+        ItemStack quitItem = cryptoWare.getItemStackFromConfig(UIpath+"quitItem", null);
+        ItemStack backItem = cryptoWare.getItemStackFromConfig(UIpath+"backItem", null);
+        inv.setItem(cryptoWare.getItemSlotFromConfig(UIpath+"quitItem", 49), quitItem);
+        inv.setItem(cryptoWare.getItemSlotFromConfig(UIpath+"backItem", 48), backItem);
 
         player.openInventory(inv);
     }
 
     public void openMyServersGUI(Player player){
         // Use the new method to create the inventory with a title as Component
-        Inventory inv = Bukkit.createInventory(null, 36, Component.text(cryptoWare.getConf("UI.myServers.title")));
+        String UIpath = "UI.myServers.";
+        Inventory inv = cryptoWare.getInventoryFromConfig(UIpath, 45);
+        fillInventory(inv, UIpath);
 
+        ItemStack emptyUpgradeSlotItem = cryptoWare.getItemStackFromConfig(UIpath+"emptyUpgradeSlotItem", null);
+        ItemStack emptyServerSlotItem = cryptoWare.getItemStackFromConfig(UIpath+"emptyServerSlotItem", null);
+        ItemStack emptyGlobalUpgradeSlotItem = cryptoWare.getItemStackFromConfig(UIpath+"emptyGlobalUpgradeSlotItem", null);
 
+        for(int slot: cryptoWare.config.getIntegerList(UIpath+"upgradeSlots")){
+            inv.setItem(slot, emptyUpgradeSlotItem);
+        }
 
-        inv.setItem(31, getQuitItem());
-        inv.setItem(30, getBackItem());
+        for(int slot: cryptoWare.config.getIntegerList(UIpath+"serverSlots")){
+            inv.setItem(slot, emptyServerSlotItem);
+        }
+
+        inv.setItem(cryptoWare.getItemSlotFromConfig(UIpath+"emptyGlobalUpgradeSlotItem", 41), emptyGlobalUpgradeSlotItem);
+
+        ItemStack quitItem = cryptoWare.getItemStackFromConfig(UIpath+"quitItem", null);
+        ItemStack backItem = cryptoWare.getItemStackFromConfig(UIpath+"backItem", null);
+        inv.setItem(cryptoWare.getItemSlotFromConfig(UIpath+"quitItem", 40), quitItem);
+        inv.setItem(cryptoWare.getItemSlotFromConfig(UIpath+"backItem", 39), backItem);
 
         player.openInventory(inv);
     }
 
+    public ItemStack getUpgradeItem(String upgradeName){
+        String path = "default_items.upgrades." + upgradeName;
+        double price = cryptoWare.config.getDouble(path + ".price");
+        int durability = cryptoWare.config.getInt(path + ".durability");
+        Map<String, String> upgradePlaceholders = new java.util.HashMap<>(Map.of());
+        upgradePlaceholders.put("{price}", String.valueOf(price));
+        upgradePlaceholders.put("{durability}", String.valueOf(durability));
+
+        ItemStack item = cryptoWare.getItemStackFromConfig("UI.shop.upgrade"+upgradeName+"Item", upgradePlaceholders);
+        ItemMeta meta = item.getItemMeta();
+        meta.getPersistentDataContainer().set(new NamespacedKey(cryptoWare, "pointer"),
+                org.bukkit.persistence.PersistentDataType.STRING, "upgrades."+upgradeName);
+        item.setItemMeta(meta);
+
+        return item;
+    }
+
     public ItemStack getServerItem(String serverTier){
-        ItemStack serverItem = cryptoWare.getHead("serverTier" + serverTier);
-        ItemMeta meta = serverItem.getItemMeta();
-        if (meta != null) {
-            meta.displayName(Component.text(cryptoWare.getConf("UI.market.serverTier" + serverTier + "Item")).decoration(TextDecoration.ITALIC, false));
-            List<Component> lore = new ArrayList<>();
+        String path = "default_items.servers.tier" + serverTier;
+        double price = cryptoWare.config.getDouble(path + ".price");
+        int durability = cryptoWare.config.getInt(path + ".durability");
+        double production = cryptoWare.config.getDouble(path + ".production");
+        Map<String, String> serverPlaceholders = new java.util.HashMap<>(Map.of());
+        serverPlaceholders.put("{price}", String.valueOf(price));
+        serverPlaceholders.put("{durability}", String.valueOf(durability));
+        serverPlaceholders.put("{production}", String.valueOf(production));
 
-            double price = cryptoWare.config.getDouble("servers.tier" + serverTier + ".price");
-            double durability = cryptoWare.config.getDouble("servers.tier" + serverTier + ".durability");
-            double production = cryptoWare.config.getDouble("servers.tier" + serverTier + ".production");
+        ItemStack item = cryptoWare.getItemStackFromConfig("UI.shop.serverTier"+serverTier+"Item", serverPlaceholders);
+        ItemMeta meta = item.getItemMeta();
+        meta.getPersistentDataContainer().set(new NamespacedKey(cryptoWare, "pointer"),
+                org.bukkit.persistence.PersistentDataType.STRING, "servers.tier"+serverTier);
+        item.setItemMeta(meta);
 
-            for(String line: cryptoWare.getConfList("UI.market.serverLore")){
-                lore.add(Component.text(line
-                        .replace("{price}", String.valueOf(price))
-                        .replace("{durability}", String.valueOf(durability))
-                        .replace("{production}", String.valueOf(production))));
-            }
-
-            meta.lore(lore);
-            serverItem.setItemMeta(meta);
-        }
-        return serverItem;
-    }
-
-    public ItemStack getInfoItem(Player player){
-        ItemStack infoItem = cryptoWare.getHead("infoItem");
-        ItemMeta meta = infoItem.getItemMeta();
-        if (meta != null) {
-            meta.displayName(Component.text(cryptoWare.getConf("UI.trader.infoItem")).decoration(TextDecoration.ITALIC, false));
-            List<Component> lore = new ArrayList<>();
-
-            for(String line: cryptoWare.getConfList("UI.trader.infoItemLore")){
-                lore.add(Component.text(line
-                        .replace("{player}", player.getName())
-                        .replace("{balance}", String.valueOf(0))));
-            }
-            meta.lore(lore);
-            infoItem.setItemMeta(meta);
-        }
-
-        return infoItem;
-    }
-
-    public ItemStack getQuitItem(){
-        ItemStack quitItem = new ItemStack(Material.BARRIER);
-        ItemMeta meta = quitItem.getItemMeta();
-        if (meta != null) {
-            meta.displayName(Component.text(cryptoWare.getConf("UI.quitItem")).decoration(TextDecoration.ITALIC, false));
-            quitItem.setItemMeta(meta);
-        }
-        return quitItem;
-    }
-
-    public ItemStack getBackItem(){
-        ItemStack backItem = new ItemStack(Material.ARROW);
-        ItemMeta meta = backItem.getItemMeta();
-        if (meta != null) {
-            meta.displayName(Component.text(cryptoWare.getConf("UI.backItem")).decoration(TextDecoration.ITALIC, false));
-            backItem.setItemMeta(meta);
-        }
-        return backItem;
+        return item;
     }
 
     // Method to fill inventory with black stained glass panes
-    private void fillInventoryWithGlass(Inventory inventory) {
+    private void fillInventory(Inventory inventory, String path) {
         // Create a black stained glass pane ItemStack
-        ItemStack grayGlass = new ItemStack(Material.GRAY_STAINED_GLASS_PANE, 1);
+        Material mat = Material.getMaterial(cryptoWare.getConf(path + "fillerMaterial"));
+        ItemStack grayGlass = new ItemStack(mat, 1);
 
         // Optionally, you can set a custom name or other properties for the glass panes
         ItemMeta meta = grayGlass.getItemMeta();

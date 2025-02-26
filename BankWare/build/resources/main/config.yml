@@ -6,7 +6,8 @@
 # |____/ \__,_|_| |_|_|\_\  \/  \/ \__,_|_|  \___|
 # Default configuration file made by LoreWare (robroblore)
 # Note: If you ever want to display the '&' symbol in a message, use '&&' instead.
-# Permissions: bankware.createdeletePOI, bankware.canReload, bankware.bankcommand
+# Permissions: bankware.createdeletePOI, bankware.canReload, bankware.bankcommand, bankware.givetake
+# For diffrent interest rates, give the player the permission bankware.interest.tierX, where X is the tier number
 
 messages:
   prefix: "&l&dBankWare ▶ &r"

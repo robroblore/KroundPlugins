@@ -8,10 +8,10 @@ import net.citizensnpcs.api.event.NPCRightClickEvent;
 import net.citizensnpcs.api.npc.NPC;
 import net.citizensnpcs.api.npc.NPCRegistry;
 import net.citizensnpcs.trait.SkinTrait;
-import org.bukkit.Bukkit;
-import org.bukkit.Location;
-import org.bukkit.Material;
-import org.bukkit.World;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.TextDecoration;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
+import org.bukkit.*;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -21,12 +21,16 @@ import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
+import org.bukkit.persistence.PersistentDataContainer;
+import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.profile.PlayerTextures;
 import org.loreware.bankWare.BankWare;
-
+import javax.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -67,6 +71,98 @@ public final class CryptoWare extends JavaPlugin implements Listener, CommandExe
         Bukkit.getScheduler().runTaskLater(this, this::scheduleNextDailyEvent, 20L);
     }
 
+    public boolean buyItemShop(Player player, ItemStack item) {
+        if (player.getInventory().firstEmpty() != -1) {
+            double price = 0;
+            if(!item.getItemMeta().getPersistentDataContainer().has(new NamespacedKey(this, "path")
+                    , PersistentDataType.STRING)) return false;
+
+            price = config.getDouble(item.getItemMeta().getPersistentDataContainer()
+                    .get(new NamespacedKey(this, "path"), PersistentDataType.STRING) + ".price");
+
+            if(!bankWare.payFromBank(player, price)){
+                player.sendMessage(getConf("messages.prefix") + getConf("messages.itemTransactionNotEnoughMoney")
+                        .replace("{price}", String.valueOf(price)));
+                return false;
+            }
+
+            player.getInventory().addItem(item);
+            saveAccount(player, item, 0);
+            player.sendMessage(getConf("messages.prefix") + getConf("messages.itemTransactionSuccessful")
+                    .replace("{price}", String.valueOf(price))
+                    .replace("{item}", getStringFromTextComponent(item.getItemMeta().displayName())));
+            return true;
+        } else {
+            player.sendMessage(getConf("messages.prefix") + getConf("messages.itemTransactionInventoryFull"));
+            return false;
+        }
+    }
+
+    public ItemStack createUpgradeItem(String path){
+        path = "default_items." + path;
+
+        int durability = config.getInt(path + ".durability");
+        Map<String, String> serverPlaceholders = new java.util.HashMap<>(Map.of());
+        serverPlaceholders.put("{durability}", String.valueOf(durability));
+        serverPlaceholders.put("{max_durability}", String.valueOf(durability));
+
+        ItemStack item = getItemStackFromConfig(path, serverPlaceholders);
+        ItemMeta meta = item.getItemMeta();
+
+        PersistentDataContainer data = meta.getPersistentDataContainer();
+
+        data.set(new NamespacedKey(this, "path"), PersistentDataType.STRING, path);
+        data.set(new NamespacedKey(this, "durability"), PersistentDataType.INTEGER, durability);
+
+        item.setItemMeta(meta);
+
+        return item;
+    }
+
+    public ItemStack createServerItem(String path){
+        path = "default_items." + path;
+        String tier = path.substring(path.length() - 1);
+
+        int durability = config.getInt(path + ".durability");
+        double production = config.getDouble(path + ".production");
+        Map<String, String> serverPlaceholders = new java.util.HashMap<>(Map.of());
+        serverPlaceholders.put("{durability}", String.valueOf(durability));
+        serverPlaceholders.put("{max_durability}", String.valueOf(durability));
+        serverPlaceholders.put("{production}", String.valueOf(production));
+
+        ItemStack item = getItemStackFromConfig(path, serverPlaceholders);
+        ItemMeta meta = item.getItemMeta();
+
+        PersistentDataContainer data = meta.getPersistentDataContainer();
+
+        data.set(new NamespacedKey(this, "path"), PersistentDataType.STRING, path);
+        data.set(new NamespacedKey(this, "durability"), PersistentDataType.INTEGER, durability);
+
+        item.setItemMeta(meta);
+
+        return item;
+    }
+
+    public void saveAccount(Player player, ItemStack item, int slot){
+        accounts = getAccountsConfig();
+        UUID uuid = player.getUniqueId();
+        if(!accounts.isConfigurationSection(uuid.toString())){
+            accounts.createSection(uuid.toString());
+            accounts.createSection(uuid.toString() + ".servers");
+            accounts.createSection(uuid.toString() + ".upgrades");
+            accounts.createSection(uuid.toString() + ".coins");
+            accounts.set(uuid.toString() + ".coins.bitcoin", 0.0);
+            accounts.set(uuid.toString() + ".coins.lorewarecoin", 0.0);
+            saveAccountsConfig();
+        }
+
+        accounts.set(uuid.toString() + ".lastName" , player.getName());
+
+        accounts.set(uuid.toString() + ".servers." + slot , item);
+        saveAccountsConfig();
+    }
+
+
     @EventHandler
     public void onNpcClick(NPCRightClickEvent event) {
         NPC npc = event.getNPC();
@@ -105,8 +201,6 @@ public final class CryptoWare extends JavaPlugin implements Listener, CommandExe
 
         // Set the skin
         npc.getOrAddTrait(SkinTrait.class).setSkinName(skinName);
-
-        saveConfig();
 
         return npc;
     }
@@ -153,6 +247,10 @@ public final class CryptoWare extends JavaPlugin implements Listener, CommandExe
         return message.replaceAll("&", "§").replaceAll("§§", "&");
     }
 
+    public String getStringFromTextComponent(Component component){
+        return PlainTextComponentSerializer.plainText().serialize(component);
+    }
+
     void debug(String m){
         System.out.println(m);
     }
@@ -169,12 +267,12 @@ public final class CryptoWare extends JavaPlugin implements Listener, CommandExe
         return list;
     }
 
-    public ItemStack getHead(String confHead) {
-        if(config.getBoolean("heads." + confHead + ".useBase64") || headDatabaseAPI == null){
-            return getCustomHead(getConf("heads." + confHead + ".id"));
+    public ItemStack getHead(String id, boolean useBase64) {
+        if(useBase64 || headDatabaseAPI == null){
+            return getCustomHead(id);
         }
         else {
-            return getHeadDB(config.getString("heads." + confHead + ".id"));
+            return getHeadDB(id);
         }
     }
 
@@ -203,11 +301,62 @@ public final class CryptoWare extends JavaPlugin implements Listener, CommandExe
             }
 
             profile.setTextures(textures);
-            meta.setOwnerProfile(profile);
+            meta.setPlayerProfile(profile);
             head.setItemMeta(meta);
         }
 
         return head;
+    }
+
+    public Inventory getInventoryFromConfig(String path, int defSize){
+        return Bukkit.createInventory(null, config.getInt(path+"size", defSize),
+                Component.text(getConf(path+"title")));
+    }
+
+    public int getItemSlotFromConfig(String path, int def){
+        return config.getInt(path + ".slot", def);
+    }
+
+    public ItemStack getItemStackFromConfig(String path, @Nullable Map<String, String> placeholders) {
+        if (!config.contains(path + ".material")) return null;
+        Material material = Material.getMaterial(config.getString(path + ".material", "BARRIER"));
+        int amount = config.getInt(path + ".amount", 1);
+
+        ItemStack item;
+
+        if (material == Material.PLAYER_HEAD) {
+            item = getHead(getConf(path + ".headID"), config.getBoolean(path + ".useBase64"));
+        }
+        else{
+            item = new ItemStack(material, amount);
+        }
+
+        ItemMeta meta = item.getItemMeta();
+
+        // Load display name
+        if (config.contains(path + ".display_name")) {
+            meta.displayName(Component.text(getConf(path + ".display_name")).decoration(TextDecoration.ITALIC, false));
+        }
+
+        // Load lore
+        if (config.contains(path + ".lore")) {
+            List<Component> lore = new ArrayList<>();
+
+            for(String line: getConfList(path + ".lore")){
+                if(placeholders != null){
+                    for(Map.Entry<String, String> entry: placeholders.entrySet()){
+                        line = line.replace(entry.getKey(), entry.getValue());
+                    }
+                }
+
+                lore.add(Component.text(line).decoration(TextDecoration.ITALIC, false));
+            }
+
+            meta.lore(lore);
+        }
+
+        item.setItemMeta(meta);
+        return item;
     }
 
     // ----------------- UTILS -----------------

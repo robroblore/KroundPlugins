@@ -56,7 +56,9 @@ public final class BankWare extends JavaPlugin implements Listener, CommandExecu
         RegisteredServiceProvider<Economy> rsp = getServer().getServicesManager().getRegistration(Economy.class);
         econ = rsp.getProvider();
 
-        getServer().getPluginManager().registerEvents(this, this);
+        getServer().
+
+                getPluginManager().registerEvents(this, this);
     }
 
     public double getBankBalance(Player player) {
@@ -86,7 +88,7 @@ public final class BankWare extends JavaPlugin implements Listener, CommandExecu
         UUID uuid = player.getUniqueId();
         double balance = getBankBalance(player);
         econ.withdrawPlayer(player, amount);
-        balance += amount;
+        balance = round(balance + amount);
         accounts.set(uuid.toString() + ".balance", balance);
         saveAccountsConfig();
         player.sendMessage(getConf("messages.prefix") + getConf("messages.depositSuccess")
@@ -104,7 +106,7 @@ public final class BankWare extends JavaPlugin implements Listener, CommandExecu
                     .replace("{amount}", String.valueOf(amount)));
             return;
         }
-        balance -= amount;
+        balance = round(balance - amount);
         accounts.set(uuid.toString() + ".balance", balance);
         saveAccountsConfig();
         econ.depositPlayer(player, amount);
@@ -113,6 +115,29 @@ public final class BankWare extends JavaPlugin implements Listener, CommandExecu
                 .replace("{balance}", String.valueOf(balance)));
         setNextInterest(player, true);
         player.playSound(player, Sound.UI_CARTOGRAPHY_TABLE_TAKE_RESULT, 1, 1);
+    }
+
+    public boolean payFromBank(Player player, double amount){
+        UUID uuid = player.getUniqueId();
+        double balance = getBankBalance(player);
+        if(balance < amount) return false;
+
+        balance = round(balance - amount);
+        accounts.set(uuid.toString() + ".balance", balance);
+        saveAccountsConfig();
+        setNextInterest(player, true);
+
+        return true;
+    }
+
+    public void payToBank(Player player, double amount){
+        UUID uuid = player.getUniqueId();
+        double balance = getBankBalance(player);
+
+        balance = round(balance + amount);
+        accounts.set(uuid.toString() + ".balance", balance);
+        saveAccountsConfig();
+        setNextInterest(player, true);
     }
 
 
@@ -531,36 +556,97 @@ public final class BankWare extends JavaPlugin implements Listener, CommandExecu
             Player player = (Player) sender;
 
             if (cmd.getName().equalsIgnoreCase("bankware")) {
-                if (args.length == 1 && (args[0].equalsIgnoreCase("reload") || args[0].equalsIgnoreCase("rl"))) {
-                    reloadConfig();
-                    config = getConfig();
-                    accounts = getAccountsConfig();
+                if (args.length > 0) {
+                    if (args[0].equalsIgnoreCase("reload") || args[0].equalsIgnoreCase("rl")) {
+                        if(!player.hasPermission("bankware.canReload")){
+                            player.sendMessage(getConf("messages.prefix") + "§4You don't have permission to do that.");
+                            return true;
+                        }
+                        reloadConfig();
+                        config = getConfig();
+                        accounts = getAccountsConfig();
 
-                    player.sendMessage(getConf("messages.prefix") + "§2Config reloaded.");
-                    return true;
-                }
-            }
-
-            else if(cmd.getName().equalsIgnoreCase("bank")){
-                openBankerGUI(player);
-            }
-
-            else if(cmd.getName().equalsIgnoreCase("createbanker")) {
-                if (args.length == 2) {
-                    createBanker(player.getLocation(), args[0], args[1]);
-                    player.sendMessage(getConf("messages.prefix") + "§2Banker created.");
-                }
-                else {
-                    player.sendMessage(getConf("messages.prefix") + "§4Usage: /createbanker <name> <skin>");
-                }
-            }
-
-            else if (cmd.getName().equalsIgnoreCase("deletebanker")) {
-                if (args.length == 1) {
-                    if(deleteBanker(args[0])) player.sendMessage(getConf("messages.prefix") + "§2Banker deleted.");
-                    else player.sendMessage(getConf("messages.prefix") + "§4Banker not found.");
-                } else {
-                    player.sendMessage(getConf("messages.prefix") + "§4Usage: /deletebanker <name>");
+                        player.sendMessage(getConf("messages.prefix") + "§2Config reloaded.");
+                        return true;
+                    }
+                    else if(args[0].equalsIgnoreCase("balance") || args[0].equalsIgnoreCase("bal")){
+                        if(!player.hasPermission("bankware.givetake")){
+                            player.sendMessage(getConf("messages.prefix") + "§4You don't have permission to do that.");
+                            return true;
+                        }
+                        Player target = Bukkit.getPlayer(args[1]);
+                        if (target == null) {
+                            player.sendMessage(getConf("messages.prefix") + "§4Player not found.");
+                            return true;
+                        }
+                        double balance = getBankBalance(target);
+                        player.sendMessage(getConf("messages.prefix")
+                                + "§2" + target.getName() + "'s balance: §e$" + balance);
+                    }
+                    else if(args[0].equalsIgnoreCase("take") || args[0].equalsIgnoreCase("t")){
+                        if(!player.hasPermission("bankware.givetake")){
+                            player.sendMessage(getConf("messages.prefix") + "§4You don't have permission to do that.");
+                            return true;
+                        }
+                        if (args.length > 2) {
+                            Player target = Bukkit.getPlayer(args[2]);
+                            if (target == null) {
+                                player.sendMessage(getConf("messages.prefix") + "§4Player not found.");
+                                return true;
+                            }
+                            double playerBalance = getBankBalance(target);
+                            payFromBank(target, Math.min(playerBalance, Double.parseDouble(args[1])));
+                            player.sendMessage(getConf("messages.prefix")
+                                    + "§2Taken §e$" + Math.min(playerBalance, Double.parseDouble(args[1])) + "§2 from " + target.getName());
+                        }
+                        else{
+                            player.sendMessage(getConf("messages.prefix") + "§4Usage: /bankware give <amount> <player>");
+                        }
+                    }
+                    else if(args[0].equalsIgnoreCase("give") || args[0].equalsIgnoreCase("g")){
+                        if(!player.hasPermission("bankware.givetake")){
+                            player.sendMessage(getConf("messages.prefix") + "§4You don't have permission to do that.");
+                            return true;
+                        }
+                        if (args.length > 2) {
+                            Player target = Bukkit.getPlayer(args[2]);
+                            if (target == null) {
+                                player.sendMessage(getConf("messages.prefix") + "§4Player not found.");
+                                return true;
+                            }
+                            payToBank(target, Double.parseDouble(args[1]));
+                            player.sendMessage(getConf("messages.prefix")
+                                    + "§2Given §e$" + Double.parseDouble(args[1]) + "§2 to " + target.getName());
+                        }
+                        else{
+                            player.sendMessage(getConf("messages.prefix") + "§4Usage: /bankware take <amount> <player>");
+                        }
+                    }
+                    else if (args[0].equalsIgnoreCase("createbanker")) {
+                        if(!player.hasPermission("bankware.createdeletePOI")){
+                            player.sendMessage(getConf("messages.prefix") + "§4You don't have permission to do that.");
+                            return true;
+                        }
+                        if (args.length > 2) {
+                            createBanker(player.getLocation(), args[1], args[2]);
+                            player.sendMessage(getConf("messages.prefix") + "§2Banker created.");
+                        }
+                        else {
+                            player.sendMessage(getConf("messages.prefix") + "§4Usage: /createbanker <name> <skin>");
+                        }
+                    }
+                    else if(args[0].equalsIgnoreCase("deletebanker")){
+                        if(!player.hasPermission("bankware.createdeletePOI")){
+                            player.sendMessage(getConf("messages.prefix") + "§4You don't have permission to do that.");
+                            return true;
+                        }
+                        if (args.length > 1) {
+                            if(deleteBanker(args[1])) player.sendMessage(getConf("messages.prefix") + "§2Banker deleted.");
+                            else player.sendMessage(getConf("messages.prefix") + "§4Banker not found.");
+                        } else {
+                            player.sendMessage(getConf("messages.prefix") + "§4Usage: /deletebanker <name>");
+                        }
+                    }
                 }
             }
         }
@@ -569,26 +655,40 @@ public final class BankWare extends JavaPlugin implements Listener, CommandExecu
 
     public List<String> onTabComplete(CommandSender sender, Command cmd, String label, String[] args) {
         if (cmd.getName().equalsIgnoreCase("bankware")) {
-            if (sender instanceof Player) {
-                List<String> list = new ArrayList<>();
-
-                list.add("reload");
-                return list;
-            }
-        }
-
-        else if (cmd.getName().equalsIgnoreCase("createbanker")) {
-            return Collections.emptyList();
-        }
-
-        else if (cmd.getName().equalsIgnoreCase("deletebanker")) {
             List<String> list = new ArrayList<>();
-            for(NPC npc: CitizensAPI.getNPCRegistry()){
-                if(npc.data().get("isBanker") != null) list.add(npc.getName());
+
+            if(args.length == 1) {
+                if (sender.hasPermission("bankware.canReload")) list.add("reload");
+                if (sender.hasPermission("bankware.createdeletePOI")) {
+                    list.add("createbanker");
+                    list.add("deletebanker");
+                }
+                if(sender.hasPermission("bankware.givetake")) {
+                    list.add("give");
+                    list.add("take");
+                    list.add("balance");
+                }
+            }
+            else if(args.length == 2){
+                if (!sender.hasPermission("bankware.createdeletePOI")) return null;
+                if(args[0].equalsIgnoreCase("deletebanker")){
+                    for(NPC npc: CitizensAPI.getNPCRegistry()){
+                        if(npc.data().get("isBanker") != null) list.add(npc.getName());
+                    }
+                }
+                else if(args[0].equalsIgnoreCase("balance") || args[0].equalsIgnoreCase("bal")){
+                    return null;
+                }
+            }
+            else if (args.length == 3 &&
+                    (args[0].equalsIgnoreCase("give") || args[0].equalsIgnoreCase("take")
+                    || args[0].equalsIgnoreCase("g") || args[0].equalsIgnoreCase("t"))){
+                return null;
             }
 
             return list;
         }
+
         return null;
     }
 
