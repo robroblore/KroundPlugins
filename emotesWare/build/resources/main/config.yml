@@ -5,7 +5,7 @@
 #  | |____| | | | | | (_) | ||  __/\__ \\  /\  / (_| | | |  __/
 #  |______|_| |_| |_|\___/ \__\___||___/ \/  \/ \__,_|_|  \___|
 #    Default configuration file made by LoreWare (robroblore)
-#    Permissions: emotesware.canSex
+#    Permissions: emotesware.canReload | emotesware.canSuperslap | emotesware.bypassCooldown
 
 messages:
   prefix: "&l&dEmotesWare ▶ &r"

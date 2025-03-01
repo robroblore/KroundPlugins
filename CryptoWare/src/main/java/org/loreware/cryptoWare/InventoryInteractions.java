@@ -12,6 +12,8 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
 
+import java.util.List;
+
 public class InventoryInteractions implements Listener {
     CryptoWare cryptoWare = CryptoWare.getInstance();
 
@@ -22,6 +24,7 @@ public class InventoryInteractions implements Listener {
 
         ItemStack clickedItem = event.getCurrentItem();
         ItemStack cursorItem = event.getCursor();
+        int clickedSlot = event.getSlot();
 
         if (clickedItem == null) return;
 
@@ -56,7 +59,38 @@ public class InventoryInteractions implements Listener {
 
         else if(event.getView().title().equals(Component.text(cryptoWare.getConf("UI.myServers.title")))){
             String UIpath = "UI.myServers.";
-            event.setCancelled(true);
+            if(event.getClickedInventory().getType() != InventoryType.PLAYER) event.setCancelled(true);
+
+            List<Integer> serverSlots = cryptoWare.config.getIntegerList(UIpath+"serverSlots");
+            List<Integer> upgradeSlots = cryptoWare.config.getIntegerList(UIpath+"upgradeSlots");
+
+            if(serverSlots.contains(clickedSlot) || clickedItem.getType() ==
+                    Material.getMaterial(cryptoWare.getConf(UIpath+"emptyServerSlotItem.material"))){
+
+                if(!cursorItem.hasItemMeta()) return;
+                if(!cursorItem.getItemMeta().getPersistentDataContainer().has(new NamespacedKey(cryptoWare, "path"))) return;
+                String path = cursorItem.getItemMeta().getPersistentDataContainer()
+                        .get(new NamespacedKey(cryptoWare, "path"), PersistentDataType.STRING);
+                String type = path.split("\\.")[1];
+                if (!type.equals("servers")) return;
+
+                cryptoWare.saveItemToAccount(player, cursorItem, serverSlots.indexOf(clickedSlot));
+                inv.setItem(clickedSlot, cursorItem);
+            }
+
+            else if(upgradeSlots.contains(clickedSlot) || clickedItem.getType() ==
+                    Material.getMaterial(cryptoWare.getConf(UIpath+"emptyUpgradeSlotItem.material"))){
+
+                if(!cursorItem.hasItemMeta()) return;
+                if(!cursorItem.getItemMeta().getPersistentDataContainer().has(new NamespacedKey(cryptoWare, "path"))) return;
+                String path = cursorItem.getItemMeta().getPersistentDataContainer()
+                        .get(new NamespacedKey(cryptoWare, "path"), PersistentDataType.STRING);
+                String type = path.split("\\.")[1];
+                if (!type.equals("upgrades")) return;
+
+                cryptoWare.saveItemToAccount(player, cursorItem, upgradeSlots.indexOf(clickedSlot));
+                inv.setItem(clickedSlot, cursorItem);
+            }
 
             if(clickedItem.getType() == Material.ARROW){
                 cryptoWare.GUIs.openTraderGUI(player);
@@ -71,13 +105,15 @@ public class InventoryInteractions implements Listener {
                 String pointer = clickedItem.getItemMeta().getPersistentDataContainer()
                         .get(new NamespacedKey(cryptoWare, "pointer"), PersistentDataType.STRING);
 
-                if(pointer.startsWith("server")){
-                    ItemStack item = cryptoWare.createServerItem(pointer);
-                    cryptoWare.buyItemShop(player, item);
-                } else if(pointer.startsWith("upgrades")){
-                    ItemStack item = cryptoWare.createUpgradeItem(pointer);
-                    cryptoWare.buyItemShop(player, item);
+                ItemStack item = null;
+
+                if(pointer.startsWith("default_items.servers")){
+                   item  = cryptoWare.createServerItem(pointer);
+                } else if(pointer.startsWith("default_items.upgrades")){
+                    item = cryptoWare.createUpgradeItem(pointer);
                 }
+                cryptoWare.buyItemShop(player, item);
+
             }
 
             if(clickedItem.getType() == Material.ARROW){

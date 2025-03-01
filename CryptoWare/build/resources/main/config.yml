@@ -158,7 +158,7 @@ UI:
     fillerMaterial: "GRAY_STAINED_GLASS_PANE" # AIR for empty
 
     serverSlots: [ 20, 22, 24 ]
-    upgradeSlots: [ 11, 13, 15 ]
+    upgradeSlots: [ 11, 13, 15, 41 ] # Last slot is the global upgrade slot
 
     emptyServerSlotItem:
       display_name: "Slot server gol"
@@ -177,7 +177,6 @@ UI:
         material: "LIME_STAINED_GLASS_PANE"
         lore:
             - "&eClick cu un upgrade global pentru a-l poziționa aici."
-        slot: 41
 
     quitItem:
       display_name: "&4Iesire"

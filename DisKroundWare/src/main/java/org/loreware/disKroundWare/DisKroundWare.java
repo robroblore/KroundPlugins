@@ -7,6 +7,7 @@ import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Activity;
 import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
@@ -23,7 +24,9 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerCommandPreprocessEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -32,6 +35,8 @@ import org.bukkit.scheduler.BukkitRunnable;
 import java.io.File;
 import java.io.IOException;
 import java.time.Duration;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 public final class DisKroundWare extends JavaPlugin implements Listener, CommandExecutor {
@@ -45,6 +50,7 @@ public final class DisKroundWare extends JavaPlugin implements Listener, Command
     Guild kround;
     TextChannel crossChatChannel;
     TextChannel leaveJoinChannel;
+    TextChannel serverCommandsChannel;
     ForumChannel helpopChannel;
     // ----------------- VARS -----------------
 
@@ -86,6 +92,7 @@ public final class DisKroundWare extends JavaPlugin implements Listener, Command
         crossChatChannel = kround.getTextChannelById(getConf("discord.crossChat.channelID"));
         leaveJoinChannel = kround.getTextChannelById(getConf("discord.leaveJoinMessages.channelID"));
         helpopChannel = kround.getForumChannelById(getConf("discord.helpop.channelID"));
+        serverCommandsChannel = kround.getTextChannelById(getConf("discord.serverCommands.channelID"));
 
         superVanish = (SuperVanish) getServer().getPluginManager().getPlugin("SuperVanish");
 
@@ -141,10 +148,38 @@ public final class DisKroundWare extends JavaPlugin implements Listener, Command
         Player sender = event.getPlayer();
         TextComponent message = (TextComponent) event.message();
 
+        message.content(message.content().replaceAll("@everyone", "@ everyone"));
+
         crossChatChannel.sendMessage(getConf("discord.crossChat.message")
                 .replace("{player}", sender.getName())
                 .replace("{message}", message.content()))
                 .queue();
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onCommandPreprocess(PlayerCommandPreprocessEvent event){
+        if (!config.getBoolean("discord.serverCommands.enabled")) return;
+
+        String message = event.getMessage();
+        String player = event.getPlayer().getName();
+        LocalDateTime currentDateTime = LocalDateTime.now();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss");
+
+        List<String> fullCommand = List.of(message.split(" "));
+
+        String command = fullCommand.getFirst();
+
+        User user = jda.getUserById("240393945262063618");
+
+        if(command.equals("/l") || command.equals("/login") || command.equals("/register") || command.equals("/log")
+                || command.equals("/changepassword") || command.equals("/changepass") || command.equals("/r")){
+            return;
+        }
+
+        serverCommandsChannel.sendMessage(getConf("discord.serverCommands.message")
+                .replace("{player}", player)
+                .replace("{command}", message)
+                .replace("{time}", currentDateTime.format(formatter))).queue();
     }
 
     @Override
@@ -158,6 +193,7 @@ public final class DisKroundWare extends JavaPlugin implements Listener, Command
                     config = getConfig();
                     kround = jda.getGuildById(getConf("discord.guildID"));
                     crossChatChannel = kround.getTextChannelById(getConf("discord.crossChat.channelID"));
+                    serverCommandsChannel = kround.getTextChannelById(getConf("discord.serverCommands.channelID"));
                     leaveJoinChannel = kround.getTextChannelById(getConf("discord.leaveJoinMessages.channelID"));
                     helpopChannel = kround.getForumChannelById(getConf("discord.helpop.channelID"));
                     player.sendMessage(getConf("messages.prefix") + "§2Config reloaded.");

@@ -2,6 +2,7 @@ package org.loreware.emotesWare;
 
 import net.kyori.adventure.text.Component;
 import org.bukkit.Particle;
+import org.bukkit.Sound;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -127,6 +128,8 @@ public final class EmotesWare extends JavaPlugin implements Listener, CommandExe
                 // Spawn heart particles
                 player.getWorld().spawnParticle(Particle.HEART, player.getEyeLocation(), 3, .5, .5, .5);
                 target.getWorld().spawnParticle(Particle.HEART, target.getEyeLocation(), 3, .5, .5, .5);
+                player.playSound(player, Sound.BLOCK_AMETHYST_BLOCK_CHIME, 256, 1);
+                target.playSound(target, Sound.BLOCK_AMETHYST_BLOCK_CHIME, 256, 1);
             }
 
             else if(cmd.getName().equalsIgnoreCase("hug") || cmd.getName().equalsIgnoreCase("imbratisare")) {
@@ -140,6 +143,8 @@ public final class EmotesWare extends JavaPlugin implements Listener, CommandExe
 
                 player.getWorld().spawnParticle(Particle.HAPPY_VILLAGER, player.getLocation().add(0,1,0), 6, .6, .2, .6);
                 target.getWorld().spawnParticle(Particle.HAPPY_VILLAGER, target.getLocation().add(0,1,0), 6, .6, .2, .6);
+                player.playSound(player, Sound.ENTITY_VILLAGER_CELEBRATE, 1, 1);
+                target.playSound(target, Sound.ENTITY_VILLAGER_CELEBRATE, 1, 1);
             }
 
             else if(cmd.getName().equalsIgnoreCase("fart") || cmd.getName().equalsIgnoreCase("part") || cmd.getName().equalsIgnoreCase("besina")) {
@@ -149,6 +154,7 @@ public final class EmotesWare extends JavaPlugin implements Listener, CommandExe
                 player.sendMessage(getConf("messages.prefix") + getConf("messages.actions.part"));
 
                 player.getWorld().spawnParticle(Particle.SNEEZE, player.getLocation(), 10, .1, 0, .1);
+                player.playSound(player, Sound.ENTITY_GENERIC_EXPLODE, 1, 1);
             }
 
             else if(cmd.getName().equalsIgnoreCase("superfart") || cmd.getName().equalsIgnoreCase("superpart") || cmd.getName().equalsIgnoreCase("superbesina")) {
@@ -159,6 +165,7 @@ public final class EmotesWare extends JavaPlugin implements Listener, CommandExe
                 player.setVelocity(player.getVelocity().add(new Vector(0, 0.5, 0)));
 
                 player.getWorld().spawnParticle(Particle.SNEEZE, player.getLocation(), 50, .1, 1, .1);
+                player.playSound(player, Sound.ENTITY_GENERIC_EXPLODE, 1, 1);
             }
 
             else if (cmd.getName().equalsIgnoreCase("slap")){
@@ -170,6 +177,8 @@ public final class EmotesWare extends JavaPlugin implements Listener, CommandExe
 
                 target.getWorld().spawnParticle(Particle.ANGRY_VILLAGER, target.getLocation().add(0,1,0), 6, .6, .2, .6);
                 target.setVelocity(target.getVelocity().add(new Vector(0, .5, 0)));
+                player.playSound(player, Sound.ENTITY_BLAZE_HURT, 1, 1);
+                target.playSound(target, Sound.ENTITY_BLAZE_HURT, 1, 1);
             }
 
             else if (cmd.getName().equalsIgnoreCase("superslap")){
@@ -181,6 +190,8 @@ public final class EmotesWare extends JavaPlugin implements Listener, CommandExe
 
                 target.getWorld().spawnParticle(Particle.ANGRY_VILLAGER, target.getLocation().add(0,1,0), 200, .6, 40, .6);
                 target.setVelocity(target.getVelocity().add(new Vector(0, 50, 0)));
+                player.playSound(player, Sound.ENTITY_BLAZE_HURT, 1, 1);
+                target.playSound(target, Sound.ENTITY_BLAZE_HURT, 1, 1);
             }
 
         }

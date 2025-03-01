@@ -9,6 +9,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataContainer;
 
+import java.util.List;
 import java.util.Map;
 
 public class GUIs {
@@ -108,11 +109,13 @@ public class GUIs {
             inv.setItem(slot, emptyUpgradeSlotItem);
         }
 
+        for (int slot: cryptoWare.config.getIntegerList(UIpath+"globalUpgradeSlots")){
+            inv.setItem(slot, emptyGlobalUpgradeSlotItem);
+        }
+
         for(int slot: cryptoWare.config.getIntegerList(UIpath+"serverSlots")){
             inv.setItem(slot, emptyServerSlotItem);
         }
-
-        inv.setItem(cryptoWare.getItemSlotFromConfig(UIpath+"emptyGlobalUpgradeSlotItem", 41), emptyGlobalUpgradeSlotItem);
 
         ItemStack quitItem = cryptoWare.getItemStackFromConfig(UIpath+"quitItem", null);
         ItemStack backItem = cryptoWare.getItemStackFromConfig(UIpath+"backItem", null);
@@ -122,8 +125,8 @@ public class GUIs {
         player.openInventory(inv);
     }
 
-    public ItemStack getUpgradeItem(String upgradeName){
-        String path = "default_items.upgrades." + upgradeName;
+    public ItemStack getUpgradeItem(String upgradeType, String upgradeName){
+        String path = "default_items.upgrades." + upgradeType + "." + upgradeName;
         double price = cryptoWare.config.getDouble(path + ".price");
         int durability = cryptoWare.config.getInt(path + ".durability");
         Map<String, String> upgradePlaceholders = new java.util.HashMap<>(Map.of());
@@ -133,7 +136,7 @@ public class GUIs {
         ItemStack item = cryptoWare.getItemStackFromConfig("UI.shop.upgrade"+upgradeName+"Item", upgradePlaceholders);
         ItemMeta meta = item.getItemMeta();
         meta.getPersistentDataContainer().set(new NamespacedKey(cryptoWare, "pointer"),
-                org.bukkit.persistence.PersistentDataType.STRING, "upgrades."+upgradeName);
+                org.bukkit.persistence.PersistentDataType.STRING, path);
         item.setItemMeta(meta);
 
         return item;
@@ -152,7 +155,7 @@ public class GUIs {
         ItemStack item = cryptoWare.getItemStackFromConfig("UI.shop.serverTier"+serverTier+"Item", serverPlaceholders);
         ItemMeta meta = item.getItemMeta();
         meta.getPersistentDataContainer().set(new NamespacedKey(cryptoWare, "pointer"),
-                org.bukkit.persistence.PersistentDataType.STRING, "servers.tier"+serverTier);
+                org.bukkit.persistence.PersistentDataType.STRING, path);
         item.setItemMeta(meta);
 
         return item;

@@ -31,6 +31,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.profile.PlayerTextures;
 import org.loreware.bankWare.BankWare;
 import javax.annotation.Nullable;
+import javax.naming.Name;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -67,8 +68,6 @@ public final class CryptoWare extends JavaPlugin implements Listener, CommandExe
         getServer().getPluginManager().registerEvents(new InventoryInteractions(), this);
 
         GUIs = new GUIs();
-
-        Bukkit.getScheduler().runTaskLater(this, this::scheduleNextDailyEvent, 20L);
     }
 
     public boolean buyItemShop(Player player, ItemStack item) {
@@ -87,7 +86,6 @@ public final class CryptoWare extends JavaPlugin implements Listener, CommandExe
             }
 
             player.getInventory().addItem(item);
-            saveAccount(player, item, 0);
             player.sendMessage(getConf("messages.prefix") + getConf("messages.itemTransactionSuccessful")
                     .replace("{price}", String.valueOf(price))
                     .replace("{item}", getStringFromTextComponent(item.getItemMeta().displayName())));
@@ -99,8 +97,6 @@ public final class CryptoWare extends JavaPlugin implements Listener, CommandExe
     }
 
     public ItemStack createUpgradeItem(String path){
-        path = "default_items." + path;
-
         int durability = config.getInt(path + ".durability");
         Map<String, String> serverPlaceholders = new java.util.HashMap<>(Map.of());
         serverPlaceholders.put("{durability}", String.valueOf(durability));
@@ -120,9 +116,6 @@ public final class CryptoWare extends JavaPlugin implements Listener, CommandExe
     }
 
     public ItemStack createServerItem(String path){
-        path = "default_items." + path;
-        String tier = path.substring(path.length() - 1);
-
         int durability = config.getInt(path + ".durability");
         double production = config.getDouble(path + ".production");
         Map<String, String> serverPlaceholders = new java.util.HashMap<>(Map.of());
@@ -143,22 +136,35 @@ public final class CryptoWare extends JavaPlugin implements Listener, CommandExe
         return item;
     }
 
-    public void saveAccount(Player player, ItemStack item, int slot){
+    public void saveItemToAccount(Player player, ItemStack item, int slot){
         accounts = getAccountsConfig();
         UUID uuid = player.getUniqueId();
         if(!accounts.isConfigurationSection(uuid.toString())){
             accounts.createSection(uuid.toString());
-            accounts.createSection(uuid.toString() + ".servers");
-            accounts.createSection(uuid.toString() + ".upgrades");
-            accounts.createSection(uuid.toString() + ".coins");
-            accounts.set(uuid.toString() + ".coins.bitcoin", 0.0);
-            accounts.set(uuid.toString() + ".coins.lorewarecoin", 0.0);
+            accounts.createSection(uuid + ".servers");
+            accounts.createSection(uuid + ".upgrades");
+            accounts.createSection(uuid + ".coins");
+            accounts.set(uuid + ".coins.bitcoin", 0.0);
+            accounts.set(uuid + ".coins.lorewarecoin", 0.0);
             saveAccountsConfig();
         }
 
-        accounts.set(uuid.toString() + ".lastName" , player.getName());
+        accounts.set(uuid + ".lastName" , player.getName());
 
-        accounts.set(uuid.toString() + ".servers." + slot , item);
+        if(!item.hasItemMeta()) return ;
+
+        if(!item.getItemMeta().getPersistentDataContainer().has(new NamespacedKey(this, "path")
+                , PersistentDataType.STRING)) return;
+
+        String path = item.getItemMeta().getPersistentDataContainer()
+                .get(new NamespacedKey(this, "path"), PersistentDataType.STRING);
+
+        String type = path.split("\\.")[1];
+
+        accounts.set(uuid + "." + type + "." + slot, item);
+
+        
+
         saveAccountsConfig();
     }
 
@@ -207,18 +213,6 @@ public final class CryptoWare extends JavaPlugin implements Listener, CommandExe
 
 
     // ----------------- UTILS -----------------
-
-    private void scheduleNextDailyEvent() {
-        World world = getServer().getWorld(getConf("trader.worldForDayCycle"));
-        long currentTime = world.getTime();
-        long ticksUntilNextDay = 24000 - currentTime;
-
-        Bukkit.getScheduler().runTaskLater(this, () -> {
-            // Do something
-            // TODO: ask denis time set?
-            scheduleNextDailyEvent(); // Reschedule for the next day
-        }, ticksUntilNextDay);
-    }
 
     public YamlConfiguration getAccountsConfig(){
         File accountsFile = new File(getDataFolder(), "accounts.yml");

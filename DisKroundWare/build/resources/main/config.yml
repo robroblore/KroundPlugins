@@ -73,6 +73,11 @@ discord:
     joinMessage: "{player} a intrat pe server!"
     leaveMessage: "{player} a iesit de pe server!"
 
+  serverCommands:
+    enabled: true
+    channelID: "1345409474285801564"
+    message: "{player} a folosit comanda pe data {time} ->\n```{command}```"
+
   helpop:
     enabled: true
     channelID: "1335693659722616872"

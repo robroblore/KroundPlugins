@@ -30,12 +30,15 @@ commands:
 
   superfart:
     description: Fa superpârț
+    permission: emotesware.canSuperfart
 
   superpart:
     description: Fa superpârț
+    permission: emotesware.canSuperfart
 
   superbesina:
     description: Fa superpârț
+    permission: emotesware.canSuperfart
 
   slap:
     description: Da o palma unui jucator
@@ -55,6 +58,9 @@ permissions:
     default: op
   emotesware.canSuperslap:
     description: Can use the command superslap
+    default: op
+  emotesware.canSuperfart:
+    description: Can use the command superfart
     default: op
   emotesware.bypassCooldown:
     description: Bypass the cooldown
