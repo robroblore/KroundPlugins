@@ -9,6 +9,7 @@ import net.citizensnpcs.api.npc.NPC;
 import net.citizensnpcs.api.npc.NPCRegistry;
 import net.citizensnpcs.trait.SkinTrait;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import net.milkbowl.vault.economy.Economy;
 import org.bukkit.*;
@@ -328,7 +329,8 @@ public final class BankWare extends JavaPlugin implements Listener, CommandExecu
                         .replace("{interest}", String.valueOf(interestPerc))
                         .replace("{interestAmount}", String.valueOf(interestAmount))
                         .replace("{nextInterestHours}", String.valueOf(getTimeLeftTillInterest(player) / 60))
-                        .replace("{nextInterestMinutes}", String.valueOf(getTimeLeftTillInterest(player) % 60))));
+                        .replace("{nextInterestMinutes}", String.valueOf(getTimeLeftTillInterest(player) % 60)))
+                        .decoration(TextDecoration.ITALIC, false));
             }
             meta.lore(lore);
             infoItem.setItemMeta(meta);

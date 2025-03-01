@@ -170,7 +170,8 @@ public final class DisKroundWare extends JavaPlugin implements Listener, Command
         String command = fullCommand.getFirst();
 
         if(command.equals("/l") || command.equals("/login") || command.equals("/register") || command.equals("/log")
-                || command.equals("/changepassword") || command.equals("/changepass") || command.equals("/r")){
+                || command.equals("/changepassword") || command.equals("/changepass") || command.equals("/r") ||
+                command.equals("/reg") || command.equals("/unregister") || command.equals("/unreg")){
             return;
         }
 
