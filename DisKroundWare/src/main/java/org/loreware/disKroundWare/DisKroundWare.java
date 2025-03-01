@@ -169,8 +169,6 @@ public final class DisKroundWare extends JavaPlugin implements Listener, Command
 
         String command = fullCommand.getFirst();
 
-        User user = jda.getUserById("240393945262063618");
-
         if(command.equals("/l") || command.equals("/login") || command.equals("/register") || command.equals("/log")
                 || command.equals("/changepassword") || command.equals("/changepass") || command.equals("/r")){
             return;
@@ -180,7 +178,7 @@ public final class DisKroundWare extends JavaPlugin implements Listener, Command
                 .replace("{player}", player)
                 .replace("{command}", message)
                 .replace("{time}", currentDateTime.format(formatter))).queue();
-    }
+    } 
 
     @Override
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
