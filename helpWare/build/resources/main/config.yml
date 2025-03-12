@@ -21,14 +21,14 @@ messages:
     - '&7Use &f/help ??? &7to see help for a specific command'
 
 helplist:
-  example:
-    - 'This is an example'
-    - 'of how to setup a help parameter'
-
-  example2:
-    - 'This is an example2'
-    - 'of how to setup a help parameter 2'
-
-  sex:
-    - 'This is an example sex'
-    - 'of how to setup a help parameter sex'
+#  example:
+#    - 'This is an example'
+#    - 'of how to setup a help parameter'
+#
+#  example2:
+#    - 'This is an example2'
+#    - 'of how to setup a help parameter 2'
+#
+#  sex:
+#    - 'This is an example sex'
+#    - 'of how to setup a help parameter sex'

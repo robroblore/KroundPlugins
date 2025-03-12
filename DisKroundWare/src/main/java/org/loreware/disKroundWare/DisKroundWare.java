@@ -29,6 +29,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerCommandPreprocessEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.event.server.ServerCommandEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
@@ -170,8 +171,9 @@ public final class DisKroundWare extends JavaPlugin implements Listener, Command
         String command = fullCommand.getFirst();
 
         if(command.equals("/l") || command.equals("/login") || command.equals("/register") || command.equals("/log")
-                || command.equals("/changepassword") || command.equals("/changepass") || command.equals("/r") ||
+                || command.equals("/changepassword") || command.equals("/changepass") ||
                 command.equals("/reg") || command.equals("/unregister") || command.equals("/unreg")){
+
             return;
         }
 
@@ -179,7 +181,20 @@ public final class DisKroundWare extends JavaPlugin implements Listener, Command
                 .replace("{player}", player)
                 .replace("{command}", message)
                 .replace("{time}", currentDateTime.format(formatter))).queue();
-    } 
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onConsoleCommand(ServerCommandEvent event) {
+        String command = event.getCommand(); // The command without "/"
+
+        LocalDateTime currentDateTime = LocalDateTime.now();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss");
+
+        serverCommandsChannel.sendMessage(getConf("discord.serverCommands.message")
+                .replace("{player}", "Console")
+                .replace("{command}", command)
+                .replace("{time}", currentDateTime.format(formatter))).queue();
+    }
 
     @Override
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {

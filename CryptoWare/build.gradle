@@ -35,7 +35,7 @@ dependencies {
 }
 
 jar {
-    destinationDirectory = file("C:\\Users\\rober\\Desktop\\plugins\\plugins")
+    destinationDirectory = file("C:\\Users\\rober\\Desktop\\LightServer\\plugins")
 }
 
 def targetJavaVersion = 21

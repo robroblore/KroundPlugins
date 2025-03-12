@@ -1,0 +1,13 @@
+messages:
+  prefix: '&e&FarmingWare &8► &7'
+
+
+commands:
+  farmingware:
+    description: Reload the config with /farmingware reload
+    permission: farmingware.canReload
+
+permissions:
+  farmingware.canReload:
+    description: Can reload the config
+    default: op

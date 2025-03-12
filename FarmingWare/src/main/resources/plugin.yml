@@ -1,0 +1,9 @@
+name: FarmingWare
+version: '1.0'
+main: org.loreware.farmingWare.FarmingWare
+api-version: '1.21'
+prefix: LoreWare
+load: STARTUP
+authors: [ robroblore ]
+description: Kround Farming addon
+depend: [AdvancedEnchantments]

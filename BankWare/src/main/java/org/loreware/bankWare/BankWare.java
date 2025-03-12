@@ -24,6 +24,8 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryType;
+import org.bukkit.event.player.PlayerCommandPreprocessEvent;
+import org.bukkit.event.server.TabCompleteEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -35,6 +37,7 @@ import java.io.IOException;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public final class BankWare extends JavaPlugin implements Listener, CommandExecutor {
 
@@ -62,7 +65,7 @@ public final class BankWare extends JavaPlugin implements Listener, CommandExecu
                 getPluginManager().registerEvents(this, this);
     }
 
-    public double getBankBalance(Player player) {
+    public double getBankBalance(OfflinePlayer player) {
         accounts = getAccountsConfig();
         UUID uuid = player.getUniqueId();
         if(!accounts.isConfigurationSection(uuid.toString())){
@@ -116,6 +119,17 @@ public final class BankWare extends JavaPlugin implements Listener, CommandExecu
                 .replace("{balance}", String.valueOf(balance)));
         setNextInterest(player, true);
         player.playSound(player, Sound.UI_CARTOGRAPHY_TABLE_TAKE_RESULT, 1, 1);
+    }
+
+    public List<OfflinePlayer> getBaltop() {
+        List<OfflinePlayer> players = Arrays.asList(Bukkit.getOfflinePlayers());
+        players.sort(Comparator.comparingDouble(this::getPlayersTotalBal).reversed());
+
+        return players;
+    }
+
+    public Double getPlayersTotalBal(OfflinePlayer player){
+        return round(econ.getBalance(player) + getBankBalance(player));
     }
 
     public boolean payFromBank(Player player, double amount){
@@ -651,8 +665,46 @@ public final class BankWare extends JavaPlugin implements Listener, CommandExecu
                     }
                 }
             }
+            else if (cmd.getName().equalsIgnoreCase("bank")) {
+                openBankerGUI(player);
+            }
         }
         return true;
+    }
+
+    @EventHandler
+    public void onTabComplete(TabCompleteEvent event) {
+        // Check if the command is '/baltop'
+        String command = event.getBuffer().toLowerCase();
+        if (command.startsWith("/baltop")) {
+            // Create a list of possible completions
+            List<String> completions = event.getCompletions();
+
+            // Check if the player typed '/baltop ' (without anything after it) or '/baltop t'
+            if (command.equals("/baltop ") || command.startsWith("/baltop t")) {
+                completions.add("total");  // Add "total" as a suggestion
+            }
+
+            // Set the possible completions for the command
+            event.setCompletions(completions);
+        }
+    }
+
+    @EventHandler
+    public void onCommandPreprocess(PlayerCommandPreprocessEvent event) {
+        String message = event.getMessage().toLowerCase(); // Get command and normalize case
+
+        // Check if the player typed exactly "/baltop total"
+        if (message.equals("/baltop total")) {
+            event.setCancelled(true); // Prevent Vault from handling this command
+
+            Player p = event.getPlayer();
+            List<String> baltop = getBaltop();
+            p.sendMessage(getConf("messages.prefix") + "§2Top balances:");
+            for (String line : baltop) {
+                p.sendMessage("§e" + line);
+            }
+        }
     }
 
     public List<String> onTabComplete(CommandSender sender, Command cmd, String label, String[] args) {

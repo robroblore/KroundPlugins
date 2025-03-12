@@ -1,0 +1,21 @@
+name: GamblingWare
+version: '1.0'
+main: org.loreware.gamblingWare.GamblingWare
+api-version: '1.21'
+prefix: LoreWare
+load: STARTUP
+authors: [ robroblore ]
+description: Kround Gambilng addon
+
+commands:
+  gamblingware:
+    description: Kround Gambling addon
+    permission: forceauth.canCreateSlots
+
+  gamblingwarepublic:
+    description: Kround Gambling addon - everyone
+
+permissions:
+  forceauth.canCreateSlots:
+    description: Can create slots
+    default: op

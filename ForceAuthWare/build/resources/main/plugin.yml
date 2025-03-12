@@ -1,0 +1,17 @@
+name: ForceAuthWare
+version: '1.0'
+main: org.loreware.forceAuthWare.ForceAuthWare
+api-version: '1.21'
+prefix: LoreWare
+load: STARTUP
+authors: [ robroblore ]
+description: Force auth for certain IPs
+commands:
+    forceauthme:
+        description: Force auth for certain IPs
+        permission: forceauth.canForceAuth
+
+permissions:
+    forceauth.canForceAuth:
+        description: Can force auth for certain IPs
+        default: op

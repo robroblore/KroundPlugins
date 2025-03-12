@@ -29,6 +29,12 @@ public class DiscordListener extends ListenerAdapter {
         CommandListUpdateAction commands = diskround.jda.updateCommands();
 
         commands.addCommands(
+                Commands.slash("ip", "Primeste ip-ul serverului")
+                        .setContexts(InteractionContextType.GUILD)
+                        .setIntegrationTypes(IntegrationType.GUILD_INSTALL)
+        );
+
+        commands.addCommands(
                 Commands.slash("online", "Primeste o lista cu toti playerii online pe server")
                         .setContexts(InteractionContextType.GUILD)
                         .setIntegrationTypes(IntegrationType.GUILD_INSTALL)
@@ -59,6 +65,10 @@ public class DiscordListener extends ListenerAdapter {
 
         switch (event.getName())
         {
+            case "ip":
+                event.reply("mc.kround.ro").queue();
+                break;
+
             case "online":
                 StringBuilder answer = new StringBuilder(
                         diskround.getConf("discord.commands.online.playersOn")).append("\n");
@@ -146,9 +156,29 @@ public class DiscordListener extends ListenerAdapter {
 
             String message = event.getMessage().getContentDisplay();
 
-            diskround.broadcastMessage(diskround.getConf("minecraft.crossChat.message")
-                    .replace("{username}", member.getEffectiveName())
-                    .replace("{message}", message));
+            if(member.getId().equals("278199829677735938")){
+                diskround.broadcastMessage(diskround.getConf("minecraft.crossChat.message")
+                        .replace("{username}", "&d" + member.getEffectiveName())
+                        .replace("{message}", "&d" + message));
+            } else{
+                diskround.broadcastMessage(diskround.getConf("minecraft.crossChat.message")
+                        .replace("{username}", member.getEffectiveName())
+                        .replace("{message}", message));
+            }
+        }
+
+        else if(event.getChannel() == diskround.serverCommandsChannel){
+            if(!diskround.config.getBoolean("discord.serverCommands.enabled")) return;
+            TextChannel channel = event.getChannel().asTextChannel();
+            if (Author.isBot()) return;
+
+            String message = event.getMessage().getContentDisplay();
+
+            diskround.getServer().getScheduler().runTask(diskround, () -> {
+                diskround.getServer().dispatchCommand(diskround.getServer().getConsoleSender(), message);
+            });
+
+            event.getMessage().reply("Comanda a fost executata cu succes!").queue();
         }
 
         else if(!(event.getChannel() instanceof ThreadChannel)){

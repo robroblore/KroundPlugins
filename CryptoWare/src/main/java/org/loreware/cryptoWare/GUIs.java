@@ -61,9 +61,12 @@ public class GUIs {
         ItemStack upgradesRowItem = cryptoWare.getItemStackFromConfig(UIpath+"upgradesRowItem", null);
 
         inv.setItem(cryptoWare.getItemSlotFromConfig(UIpath+"upgradesRowItem", 29), upgradesRowItem);
-        inv.setItem(cryptoWare.getItemSlotFromConfig(UIpath+"upgradeExtinguisherItem", 31), getUpgradeItem("Extinguisher"));
-        inv.setItem(cryptoWare.getItemSlotFromConfig(UIpath+"upgradeOverclockItem", 32), getUpgradeItem("Overclock"));
-        inv.setItem(cryptoWare.getItemSlotFromConfig(UIpath+"upgradeTestItem", 33), getUpgradeItem("Test"));
+        inv.setItem(cryptoWare.getItemSlotFromConfig(UIpath+"upgradeExtinguisherItem", 31),
+                getUpgradeItem("global", "Extinguisher"));
+        inv.setItem(cryptoWare.getItemSlotFromConfig(UIpath+"upgradeOverclockItem", 32),
+                getUpgradeItem("local", "Overclock"));
+        inv.setItem(cryptoWare.getItemSlotFromConfig(UIpath+"upgradeTestItem", 33),
+                getUpgradeItem("local", "Test"));
 
         Map<String, String> infoPlaceholders = new java.util.HashMap<>(Map.of());
         infoPlaceholders.put("{player}", player.getName());
@@ -121,6 +124,8 @@ public class GUIs {
         ItemStack backItem = cryptoWare.getItemStackFromConfig(UIpath+"backItem", null);
         inv.setItem(cryptoWare.getItemSlotFromConfig(UIpath+"quitItem", 40), quitItem);
         inv.setItem(cryptoWare.getItemSlotFromConfig(UIpath+"backItem", 39), backItem);
+
+        cryptoWare.loadItemsFromAccounts(player, inv);
 
         player.openInventory(inv);
     }

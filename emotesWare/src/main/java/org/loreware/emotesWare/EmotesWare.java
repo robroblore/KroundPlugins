@@ -169,8 +169,6 @@ public final class EmotesWare extends JavaPlugin implements Listener, CommandExe
             }
 
             else if (cmd.getName().equalsIgnoreCase("slap")){
-                if(!checkForCooldown(player)) return true;
-
                 Player target = basicEmoteHandler(player, args, "slap");
 
                 if (target == null) return true;
@@ -182,8 +180,6 @@ public final class EmotesWare extends JavaPlugin implements Listener, CommandExe
             }
 
             else if (cmd.getName().equalsIgnoreCase("superslap")){
-                if(!checkForCooldown(player)) return true;
-
                 Player target = basicEmoteHandler(player, args, "superslap");
 
                 if (target == null) return true;

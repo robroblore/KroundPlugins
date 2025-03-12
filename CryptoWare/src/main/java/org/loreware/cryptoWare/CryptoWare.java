@@ -15,6 +15,7 @@ import org.bukkit.*;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.EntityType;
@@ -110,6 +111,8 @@ public final class CryptoWare extends JavaPlugin implements Listener, CommandExe
         data.set(new NamespacedKey(this, "path"), PersistentDataType.STRING, path);
         data.set(new NamespacedKey(this, "durability"), PersistentDataType.INTEGER, durability);
 
+        data.set(new NamespacedKey(this, "unique_id"), PersistentDataType.STRING, UUID.randomUUID().toString());
+
         item.setItemMeta(meta);
 
         return item;
@@ -131,9 +134,32 @@ public final class CryptoWare extends JavaPlugin implements Listener, CommandExe
         data.set(new NamespacedKey(this, "path"), PersistentDataType.STRING, path);
         data.set(new NamespacedKey(this, "durability"), PersistentDataType.INTEGER, durability);
 
+        data.set(new NamespacedKey(this, "unique_id"), PersistentDataType.STRING, UUID.randomUUID().toString());
+
         item.setItemMeta(meta);
 
         return item;
+    }
+
+    public void deleteItemFromAccount(Player player, ItemStack item, int slot){
+        accounts = getAccountsConfig();
+        UUID uuid = player.getUniqueId();
+        ConfigurationSection section = accounts.getConfigurationSection(uuid.toString());
+        if(section == null) return;
+
+        if(!item.hasItemMeta()) return;
+        if(!item.getItemMeta().getPersistentDataContainer().has(new NamespacedKey(this, "path"))) return;
+        String path = item.getItemMeta().getPersistentDataContainer()
+                .get(new NamespacedKey(this, "path"), PersistentDataType.STRING);
+        String type = path.split("\\.")[1];
+
+        if (type.equals("upgrades")){
+            type += "." + path.split("\\.")[2];
+        }
+
+        debug("deleting item from account: " + type + "." + slot);
+        section.set(type + "." + slot, null);
+        saveAccountsConfig();
     }
 
     public void saveItemToAccount(Player player, ItemStack item, int slot){
@@ -161,11 +187,47 @@ public final class CryptoWare extends JavaPlugin implements Listener, CommandExe
 
         String type = path.split("\\.")[1];
 
+        if (type.equals("upgrades")){
+            type += "." + path.split("\\.")[2];
+        }
+
         accounts.set(uuid + "." + type + "." + slot, item);
 
-        
-
         saveAccountsConfig();
+    }
+
+    public void loadItemsFromAccounts(Player player, Inventory inv){
+        accounts = getAccountsConfig();
+        ConfigurationSection section = accounts.getConfigurationSection(player.getUniqueId().toString());
+        if(section == null) return;
+
+        ConfigurationSection servers = section.getConfigurationSection("servers");
+        ConfigurationSection localUpgrades = section.getConfigurationSection("upgrades.local");
+        ConfigurationSection globalUpgrades = section.getConfigurationSection("upgrades.global");
+
+        if(servers != null){
+            for(String key: servers.getKeys(false)){
+                int slot = config.getIntegerList("UI.myServers." + "serverSlots").get(Integer.parseInt(key));
+                ItemStack item = servers.getItemStack(key);
+                inv.setItem(slot, item);
+            }
+        }
+
+        if(localUpgrades != null){
+            for(String key: localUpgrades.getKeys(false)){
+                int slot = config.getIntegerList("UI.myServers." + "upgradeSlots").get(Integer.parseInt(key));
+                ItemStack item = localUpgrades.getItemStack(key);
+                inv.setItem(slot, item);
+            }
+        }
+
+        if(globalUpgrades != null){
+            for(String key: globalUpgrades.getKeys(false)){
+                int slot = config.getIntegerList("UI.myServers." + "globalUpgradeSlots").get(Integer.parseInt(key));
+                ItemStack item = globalUpgrades.getItemStack(key);
+                inv.setItem(slot, item);
+            }
+        }
     }
 
 
