@@ -71,7 +71,7 @@ public final class DisKroundWare extends JavaPlugin implements Listener, Command
 
         try{
             jda = JDABuilder.createLight(
-                            "MTMzNTI3Njc4NDg4NzAwNTM5NQ.Gmnwdt.v4BHSY86ziJvCc9TxT6cKE9HNmK7UrAGV0AXXQ",
+                            "MTMzNTI3Njc4NDg4NzAwNTM5NQ.Gmnwdt.v4BHSY86ziJvCc9TxT6cKE9HNmK7UrAGV0AXXQ", // Secret key was reset when repo was made public :>
                             EnumSet.of(
                                     GatewayIntent.GUILD_MESSAGES,
                                     GatewayIntent.MESSAGE_CONTENT,
